@@ -85,12 +85,12 @@ tools:
       required: [manufacturer, model, query_type]
 
   - name: policy
-    description: "Tìm trong chính sách IT nội bộ của công ty. Dùng khi user hỏi về quy định, chính sách hoặc quy trình IT."
+    description: "Tìm trong chính sách IT nội bộ của công ty, chỉ đọc. Luôn xác định policy_area đúng theo chủ đề trước khi gọi: đăng nhập/MFA/quyền truy cập -> access_control; password/token/dữ liệu nhạy cảm -> data_privacy; gửi dữ liệu ra external tool -> external_tools; phân loại/ưu tiên sự cố -> incident_response; thay đổi cấu hình/vận hành dịch vụ -> service_operations; quy định tạo/xử lý ticket -> ticketing. Chỉ dùng all khi chủ đề không khớp nhóm nào."
     parameters:
       type: object
       properties:
-        query: {type: string, description: "Nội dung cần tìm trong chính sách"}
-        policy_area: {type: string, enum: [all, access_control, data_privacy, external_tools, incident_response, service_operations, ticketing], default: "all", description: "Nhóm chính sách"}
+        query: {type: string, description: "Nội dung cần tìm, dùng để thu hẹp thêm trong policy_area"}
+        policy_area: {type: string, enum: [all, access_control, data_privacy, external_tools, incident_response, service_operations, ticketing], default: "all", description: "Nhóm chính sách theo chủ đề; phải set đúng nhóm khi chủ đề rõ ràng"}
         top_k: {type: integer, default: 3, description: "Số mục"}
       required: [query]
 
