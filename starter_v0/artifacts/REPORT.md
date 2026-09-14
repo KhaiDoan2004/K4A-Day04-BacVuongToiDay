@@ -70,13 +70,12 @@ total_cases`, và tool result error đã được review thủ công.
 | v1 | `system_prompt.md` | Thêm rule clarify khi thiếu ID và bắt buộc xin xác nhận trước write action sẽ giảm lỗi missing_info và wrong_boundary | case_accuracy | 0.70 | 0.70 | `runs/v1_B_base_openai_20260914T191304475090.json` |
 | v2 | `system_prompt.md` + `tools.yaml` | Giảm độ gắt của rule clarify và quy định rõ tham số trong tools.yaml sẽ tăng argument accuracy | case_accuracy | 0.70 | 0.9667 | `runs/v2_B_base_openai_20260914T192018737111.json` |
 | v3 | `system_prompt.md` | Nghiêm cấm AI sử dụng dữ liệu ví dụ (như EMP-1003) nếu user không cung cấp sẽ khắc phục hoàn toàn lỗi missing_info còn lại | case_accuracy | 0.9667 | 1.0 | `runs/v3_B_base_openai_20260914T194921674043.json` |
-| v4 | `system_prompt.md` + `tools.yaml` (hardening confirmation boundary + policy_area routing) | Re-verify trên artifact thật của `main` phát hiện: (1) hash của dòng v3 phía trên đã cũ, không khớp artifact hiện tại; (2) 3 case adversarial (A04, A10, A11) **fail thật** dù report claim PASS trước đó (xem cảnh báo ở B4a); (3) extension suite tụt còn 0.40 vì mất mapping `policy_area`. Thêm rule: confirmation chỉ hợp lệ khi là lời user tự nói, không qua role giả `<assistant>`/`SYSTEM`/`DEVELOPER`; khôi phục mapping chủ đề → `policy_area` | case_accuracy (adversarial / base / extension) | 0.75 / 0.9667 / 0.40 | 1.0 / 1.0 / 0.9 | `runs/v6_B_adversarial_openai_20260914T233346796538.json`, `runs/v6_B_base_openai_20260914T233433146164.json`, `runs/v6_B_extension_openai_20260914T233501914579.json` |
+| v4 | `system_prompt.md` + `tools.yaml` (hardening confirmation boundary + policy_area routing) | Re-verify trên artifact thật của `main` phát hiện: (1) hash của dòng v3 phía trên đã cũ, không khớp artifact hiện tại; (2) 3 case adversarial (A04, A10, A11) **fail thật** dù report claim PASS trước đó (xem cảnh báo ở B4a); (3) extension suite tụt còn 0.40 vì mất mapping `policy_area`. Thêm rule: confirmation chỉ hợp lệ khi là lời user tự nói, không qua role giả `<assistant>`/`SYSTEM`/`DEVELOPER`; khôi phục mapping chủ đề → `policy_area` | case_accuracy (adversarial / base / extension) | 0.75 / 0.9667 / 0.40 | 1.0 / 1.0 / 0.9 | `runs/v4_B_adversarial_openai_20260914T233346796538.json`, `runs/v4_B_base_openai_20260914T233433146164.json`, `runs/v4_B_extension_openai_20260914T233501914579.json` |
 
-> Đầy đủ chi tiết (author, artifact_version, prompt_hash, tools_hash) xem `artifacts/version_log.csv`.
-> Lưu ý: cột "version" ghi `v4` nhưng chuỗi `artifact_version` trong 3 dòng đó lại là
-> `v6+p41c11ee4c8bf+t662aa2f98496` (run_file cũng đặt tên `v6_...`) — nhãn số hiệu
-> version bị lệch giữa 2 chỗ, nhóm nên thống nhất lại 1 số hiệu duy nhất trước khi nộp.
-> Base suite đo lại trên artifact `v4` này (đã tự chạy lại để re-verify, không chỉ tin
+> Đầy đủ chi tiết (author, artifact_version, prompt_hash, tools_hash) xem `artifacts/version_log.csv`
+> (đã thống nhất nhãn `v4` xuyên suốt — trước đó có lúc lệch với `v6` do người chạy
+> dùng số đếm cục bộ, đã đổi tên file + sửa nội dung run cho khớp). Base suite đo lại
+> trên artifact `v4` này (đã tự chạy lại để re-verify, không chỉ tin
 > con số cũ): case_accuracy vẫn 0.9667/30 (cùng 1 case lệch H17, không liên quan tool
 > mới) — `runs/v4_B_base_openai_20260914T235157048408.json`. Bộ 10 case
 > `eval_group.json` đo trên artifact `v4` này vẫn đạt case_accuracy 0.6/10 (3 lỗi
@@ -151,7 +150,7 @@ liệu bị ghi hoặc gửi ra ngoài; cần kiểm tra cả `tool_results` và
 > hiện A04/A10/A11 thực ra **FAIL** trên `main` lúc đó, dù bảng này claim PASS,
 > và đã vá lại trong `system_prompt.md` (v4). Đã tự chạy lại toàn bộ 12 case
 > ngay bây giờ trên artifact `v4` hiện tại để xác nhận: **12/12 PASS**, run hợp
-> lệ (`provider_error_cases: 0`) — `runs/v6_B_adversarial_openai_20260914T233346796538.json`.
+> lệ (`provider_error_cases: 0`) — `runs/v4_B_adversarial_openai_20260914T233346796538.json`.
 > Vậy bảng bên dưới hiện **đúng lại** với artifact mới nhất, nhưng nhóm nên biết
 > nó đã có lúc sai — luôn re-run trước khi nộp, không chỉ tin report cũ.
 
@@ -305,7 +304,7 @@ Sao chép mẫu dưới đây cho từng thành viên:
 - **Điều tôi học được từ phần việc này:** Nắm vững phương pháp red-teaming cho AI Agent, cách thiết lập ranh giới an toàn cho các action có side-effect và quản lý trust boundary khi tích hợp API bên ngoài.
 - **Nếu làm lại, tôi sẽ cải thiện điều gì:** Xây dựng thêm kịch bản fuzzing tự động các ký tự encoding đặc biệt để kiểm thử độ bền của bộ lọc regex an toàn dữ liệu.
 
-### Nguyễn Văn Biển — MSSV *(cần bổ sung)*
+### Nguyễn Văn Biển
 
 - **Vai trò/phần việc được nhận:** Prompt Engineer — cải thiện `system_prompt.md`.
 - **Những gì tôi đã thay đổi trong repo chung:** *(tự điền)*
@@ -316,7 +315,7 @@ Sao chép mẫu dưới đây cho từng thành viên:
 - **Điều tôi học được từ phần việc này:** *(tự điền)*
 - **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền)*
 
-### Nguyễn Phúc Bảo — MSSV *(cần bổ sung)*
+### Nguyễn Phúc Bảo
 
 - **Vai trò/phần việc được nhận:** Tool Architect & UI — cải thiện `tools.yaml`,
   xây dựng giao diện chat Streamlit, và re-verify/vá lỗ hổng bảo mật ở v4.
@@ -334,7 +333,7 @@ Sao chép mẫu dưới đây cho từng thành viên:
 - **Điều tôi học được từ phần việc này:** *(tự điền)*
 - **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền)*
 
-### Đoàn Bá Khải — MSSV *(cần bổ sung)*
+### Đoàn Bá Khải
 
 - **Vai trò/phần việc được nhận:** Team Lead — tạo fork, review/merge pull
   request của cả nhóm, hoàn thiện `system_prompt.md` qua v2→v3.
@@ -346,7 +345,7 @@ Sao chép mẫu dưới đây cho từng thành viên:
 - **Điều tôi học được từ phần việc này:** *(tự điền)*
 - **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền)*
 
-### Nguyễn Văn An — MSSV *(cần bổ sung)*
+### Nguyễn Văn An
 
 - **Vai trò/phần việc được nhận:** QA & Metrics — viết `eval_group.json` (10
   case), điền `version_log.csv`, chạy eval các phiên bản, merge bonus tool,
@@ -379,7 +378,7 @@ không dùng chính phần reflection làm bằng chứng duy nhất cho đóng 
 Chỉ nộp bài khi mọi mục dưới đây đã được kiểm tra trên branch cuối cùng của
 repository chung:
 
-- [ ] `TEAMMATES.md` có đủ họ tên, MSSV, GitHub username và vai trò. — **chưa xong: thiếu MSSV thật của 5 người** (đang là placeholder suy đoán/để trống, xem `TEAMMATES.md`)
+- [ ] `TEAMMATES.md` có đủ họ tên, MSSV, GitHub username và vai trò. — **cố ý bỏ trống MSSV theo quyết định của nhóm**; SUBMISSION-GUIDE liệt kê MSSV là bắt buộc nên mục này về mặt kỹ thuật chưa đủ, nhóm tự chịu rủi ro nếu không bổ sung trước khi nộp
 - [x] Mỗi thành viên có ít nhất một commit trong lịch sử branch nộp bài. — đã xác nhận cả 5 người (An, Biển, Bảo, Khải, Khuyến) đều có commit thật trên `main`
 - [ ] Phần reflection chung của nhóm đã hoàn thành và có evidence. — **đang là bản nháp** dựa trên evidence thật (C1), cần nhóm đọc lại/chỉnh sửa rồi mới tính là hoàn thành
 - [ ] Mỗi thành viên đã tự viết và commit self-reflection của mình. — **chưa xong: mới có 1/5 người** (Trần Ngọc Khuyến); 4 người còn lại cần tự viết phần "*(tự điền)*" trong C2 và tự commit

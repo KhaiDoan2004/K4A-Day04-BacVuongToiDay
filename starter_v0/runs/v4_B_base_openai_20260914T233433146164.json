@@ -1,7 +1,7 @@
 {
-  "run_id": "v6_B_base_openai_20260914T233433146164",
-  "version": "v6",
-  "artifact_version": "v6+p41c11ee4c8bf+t662aa2f98496",
+  "run_id": "v4_B_base_openai_20260914T233433146164",
+  "version": "v4",
+  "artifact_version": "v4+p41c11ee4c8bf+t662aa2f98496",
   "prompt_hash": "41c11ee4c8bf79134e340c442132e4dbf7e169a1e1b5c0de6a3f0890ac41d487",
   "tools_hash": "662aa2f984964f8fd9615b217f9a3266bbeccb79e44dc396299aa29b03ea724e",
   "phase": "B",
