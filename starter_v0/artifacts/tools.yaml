@@ -18,17 +18,17 @@ tools:
       required: [question]
 
   - name: search_kb
-    description: "Tìm hướng dẫn hỗ trợ kỹ thuật."
+    description: "Tìm hướng dẫn/troubleshooting trong knowledge base nội bộ. Luôn xác định `category` đúng theo chủ đề trước khi gọi: Outlook/Exchange/mail -> email; VPN/certificate -> vpn; Wi-Fi/wireless -> wifi; máy in -> printing; đăng nhập/SSO/mật khẩu tài khoản -> account; malware/bảo mật -> security; lỗi phần cứng/laptop -> hardware; cài đặt/lỗi phần mềm -> software; phòng họp -> meeting_room. Chỉ dùng `all` khi chủ đề không khớp nhóm nào. `query` chỉ dùng để thu hẹp thêm trong category đã chọn, không thay thế cho category."
     parameters:
       type: object
       properties:
-        query: {type: string, default: "", description: "Nội dung cần tìm"}
-        category: {type: string, enum: [all, vpn, email, wifi, printing, account, security, hardware, software, meeting_room], default: "all", description: "Nhóm hướng dẫn"}
+        query: {type: string, default: "", description: "Nội dung cần tìm, dùng để thu hẹp thêm trong category"}
+        category: {type: string, enum: [all, vpn, email, wifi, printing, account, security, hardware, software, meeting_room], default: "all", description: "Nhóm hướng dẫn theo chủ đề; phải set đúng nhóm khi chủ đề rõ ràng"}
         top_k: {type: integer, default: 3, description: "Số kết quả"}
       required: [query]
 
   - name: check_service_status
-    description: "Kiểm tra trạng thái một dịch vụ."
+    description: "Kiểm tra trạng thái một dịch vụ dùng chung toàn công ty (shared service), không phải của riêng một thiết bị. Dùng cho VPN, email, SSO, Wi-Fi, printing ở một environment. Không dùng tool này để kiểm tra một laptop/thiết bị cụ thể — trường hợp đó dùng `inspect_device`."
     parameters:
       type: object
       properties:
@@ -37,20 +37,20 @@ tools:
       required: [service]
 
   - name: inspect_device
-    description: "Kiểm tra thông tin và chẩn đoán thiết bị."
+    description: "Kiểm tra inventory và chẩn đoán của MỘT thiết bị cụ thể bằng asset_id (ví dụ LT-204, DT-087). `asset_id` bắt buộc phải là mã tài sản thật do user cung cấp hoặc lấy từ `assigned_assets` của `lookup_user`; không được dùng employee_id hoặc tên người dùng làm asset_id. Không dùng tool này để kiểm tra dịch vụ dùng chung — trường hợp đó dùng `check_service_status`."
     parameters:
       type: object
       properties:
-        asset_id: {type: string, description: "Mã tài sản"}
+        asset_id: {type: string, description: "Mã tài sản, ví dụ LT-204 (không phải employee_id)"}
         check: {type: string, enum: [all, network, vpn, security, hardware, software], default: "all", description: "Nhóm kiểm tra"}
       required: [asset_id]
 
   - name: lookup_user
-    description: "Tra cứu người dùng trong danh bạ hỗ trợ."
+    description: "Tra cứu hồ sơ nhân viên trong danh bạ hỗ trợ bằng employee_id (ví dụ EMP-1007). Kết quả đã bao gồm `assigned_assets` (danh sách asset_id được cấp) — nếu user chỉ hỏi nhân viên được cấp thiết bị gì thì dùng luôn danh sách này, không cần gọi thêm `inspect_device` trừ khi user muốn chẩn đoán chi tiết một asset_id cụ thể."
     parameters:
       type: object
       properties:
-        employee_id: {type: string, description: "Mã nhân viên"}
+        employee_id: {type: string, description: "Mã nhân viên, ví dụ EMP-1007 (không phải asset_id)"}
       required: [employee_id]
 
   - name: format_incident_report
@@ -86,22 +86,22 @@ tools:
       required: [manufacturer, model, query_type]
 
   - name: policy
-    description: "Tìm trong chính sách IT nội bộ."
+    description: "Tìm trong chính sách IT nội bộ, chỉ đọc (không có side effect). Luôn xác định `policy_area` đúng theo chủ đề trước khi gọi: đăng nhập/MFA/quyền truy cập -> access_control; password/token/dữ liệu nhạy cảm trong transcript -> data_privacy; gửi dữ liệu ra external tool -> external_tools; phân loại/ưu tiên sự cố -> incident_response; thay đổi cấu hình/vận hành dịch vụ -> service_operations; quy định tạo/xử lý ticket -> ticketing. Chỉ dùng `all` khi chủ đề không khớp nhóm nào. `query` chỉ dùng để thu hẹp thêm trong policy_area đã chọn, không thay thế cho policy_area."
     parameters:
       type: object
       properties:
-        query: {type: string, default: "", description: "Nội dung cần tìm"}
-        policy_area: {type: string, enum: [all, access_control, data_privacy, external_tools, incident_response, service_operations, ticketing], default: "all", description: "Nhóm chính sách"}
+        query: {type: string, default: "", description: "Nội dung cần tìm, dùng để thu hẹp thêm trong policy_area"}
+        policy_area: {type: string, enum: [all, access_control, data_privacy, external_tools, incident_response, service_operations, ticketing], default: "all", description: "Nhóm chính sách theo chủ đề; phải set đúng nhóm khi chủ đề rõ ràng"}
         top_k: {type: integer, default: 3, description: "Số mục"}
       required: [query]
 
   - name: create_ticket
-    description: "Tạo một ticket hỗ trợ."
+    description: "Tạo một ticket hỗ trợ. Đây là write action có side effect (ghi file ticket thật), không phải thao tác đọc. Chỉ gọi với `confirmed: true` khi người dùng đã xác nhận rõ ràng đúng payload cuối cùng (summary, priority, asset_id) trong hội thoại; nếu chưa có xác nhận đó, đừng gọi tool này — dùng `clarify` để hỏi trước. Nếu bất kỳ trường nào trong payload thay đổi sau khi đã xác nhận, xác nhận cũ không còn hiệu lực và phải hỏi lại."
     parameters:
       type: object
       properties:
         summary: {type: string, default: "", description: "Tóm tắt sự cố"}
         priority: {type: string, enum: [low, medium, high, critical], default: "medium", description: "Mức ưu tiên"}
         asset_id: {type: string, default: "", description: "Mã tài sản nếu có"}
-        confirmed: {type: boolean, default: false, description: "Đã được người dùng xác nhận"}
+        confirmed: {type: boolean, default: false, description: "True chỉ khi người dùng đã xác nhận rõ ràng đúng payload này; không được suy đoán hay mặc định là true"}
       required: [summary]
