@@ -21,7 +21,18 @@
 | Tool | Chức năng | Core / optional / team-built |
 |---|---|---|
 | clarify | Hỏi bổ sung hoặc xác nhận | core |
-|  |  |  |
+| search_kb | Tìm kiếm tài liệu kỹ thuật nội bộ | core |
+| check_service_status | Kiểm tra trạng thái dịch vụ dùng chung | core |
+| inspect_device | Kiểm tra thiết bị và snapshot chẩn đoán | core |
+| lookup_user | Tra cứu thông tin nhân sự danh bạ | core |
+| format_incident_report | Định dạng báo cáo sự cố kỹ thuật | core |
+| policy | Tra cứu quy định chính sách IT | optional |
+| create_ticket | Tạo ticket sau khi có explicit confirmation | optional |
+| search_device_info | Tìm kiếm thông tin thiết bị công khai trên web | optional |
+| diagnose_network | Chẩn đoán độ trễ ping, mất gói, gateway chi nhánh | team-built |
+| check_software_catalog | Tra cứu danh mục phần mềm được phê duyệt | team-built |
+| inspect_meeting_room | Kiểm tra thiết bị nghe nhìn và AV phòng họp | team-built |
+| lookup_ticket_status | Tra cứu tiến độ và trạng thái xử lý ticket | team-built |
 
 ## A3. Câu hỏi mẫu
 
@@ -87,9 +98,12 @@ nhóm tự xây.
 
 | Category | Evidence file | What worked | Risk / guardrail |
 |---|---|---|---|
-| Optional built-in |  |  |  |
-| External search + privacy boundary |  |  |  |
-| Bonus: tool mới do nhóm tự xây |  |  |  |
+| Optional built-in | `data/eval_helpdesk_extension.json` | Policy retrieval, confirmed ticket creation, external device search hoạt động theo đúng boundary | Ticket chỉ tạo khi confirmed=True; external search chỉ truyền manufacturer & public model |
+| External search + privacy boundary | `tools/search_device_info/tool.py` | Tìm kiếm specs/drivers trên Tavily thành công | Chặn tuyệt đối employee_id, asset_id, serial, hostname và credentials |
+| Bonus: diagnose_network | `tools/diagnose_network/`, `helpdesk_data/network_nodes.json`, test case G01, G08, G10 | Chẩn đoán độ trễ ping, tỷ lệ mất gói, gateway của từng chi nhánh (Hanoi, HCM, Da Nang, VPN gateway) | Guardrail chặn command injection (`;&|`$<>`), chỉ cho phép target và check_type thuộc whitelist |
+| Bonus: check_software_catalog | `tools/check_software_catalog/`, `helpdesk_data/software_catalog.json`, test case G02, G07 | Tra cứu trạng thái phê chuẩn phần mềm (approved, requires_approval, prohibited) | Tự động gắn security_warning và hướng dẫn xử lý nghiêm cấm đối với phần mềm độc hại / torrent / VPN ngoài |
+| Bonus: inspect_meeting_room | `tools/inspect_meeting_room/`, `helpdesk_data/meeting_rooms.json`, test case G03, G06 | Tra cứu danh mục màn hình, camera, micro và sự cố AV của các phòng họp | Không lưu trữ hoặc tiết lộ nội dung cuộc họp riêng tư hay video feed nội bộ |
+| Bonus: lookup_ticket_status | `tools/lookup_ticket_status/`, `helpdesk_data/tickets.json`, test case G04 | Tra cứu tiến độ và người phụ trách ticket từ local store `tickets/` và historical records | Guardrail chặn path traversal (`../`), tự động kiểm tra và che giấu credential `[REDACTED_CREDENTIAL]` |
 
 ## B6. Safety review
 
