@@ -316,7 +316,7 @@ Sao chép mẫu dưới đây cho từng thành viên:
 - **Điều tôi học được từ phần việc này:** *(tự điền)*
 - **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền)*
 
-### Nguyễn Phúc Bảo — MSSV *(cần bổ sung)*
+### Nguyễn Phúc Bảo — MSSV 2A202602925
 
 - **Vai trò/phần việc được nhận:** Tool Architect & UI — cải thiện `tools.yaml`
   qua v1-v3, xây dựng giao diện chat Streamlit, và re-verify/vá lỗ hổng bảo mật
