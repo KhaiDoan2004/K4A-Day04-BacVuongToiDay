@@ -55,10 +55,12 @@ total_cases`, và tool result error đã được review thủ công.
 
 | Version | Prompt/tool change | Hypothesis | Metric | Before | After | Run file |
 |---|---|---|---|---:|---:|---|
-| v0 | baseline |  |  |  |  |  |
-| v1 |  |  |  |  |  |  |
-| v2 |  |  |  |  |  |  |
-| v3 |  |  |  |  |  |  |
+| v0 | baseline | Đo hành vi chưa tối ưu trước khi sửa | case_accuracy | — | 0.70 | `runs/v0_B_base_openai_20260914T185500158601.json` |
+| v1 | `system_prompt.md` | Thêm rule clarify khi thiếu ID và bắt buộc xin xác nhận trước write action sẽ giảm lỗi missing_info và wrong_boundary | case_accuracy | 0.70 | 0.70 | `runs/v1_B_base_openai_20260914T191304475090.json` |
+| v2 | `system_prompt.md` + `tools.yaml` | Giảm độ gắt của rule clarify và quy định rõ tham số trong tools.yaml sẽ tăng argument accuracy | case_accuracy | 0.70 | 0.9667 | `runs/v2_B_base_openai_20260914T192018737111.json` |
+| v3 | `system_prompt.md` | Nghiêm cấm AI sử dụng dữ liệu ví dụ (như EMP-1003) nếu user không cung cấp sẽ khắc phục hoàn toàn lỗi missing_info còn lại | case_accuracy | 0.9667 | 1.0 | `runs/v3_B_base_openai_20260914T194921674043.json` |
+
+> Đầy đủ chi tiết (author, artifact_version, prompt_hash, tools_hash) xem `artifacts/version_log.csv`. Sau v3, nhóm merge thêm 4 bonus tool vào `tools.yaml` (tools_hash đổi từ `b1ecf974ed8d` sang `6943041e2f40`); base suite đo lại đạt 0.9667/30 (1 case lệch nhẹ, không liên quan tool mới — xem `runs/v3_B_base_openai_20260914T205008177389.json`), và bộ 10 case `eval_group.json` cuối cùng đo trên artifact này đạt case_accuracy 0.6 — xem B3.
 
 ## B2. Failure analysis
 
@@ -68,11 +70,31 @@ total_cases`, và tool result error đã được review thủ công.
 
 ## B3. Team eval cases
 
-Liệt kê đúng 10 case tự viết: 5 single-turn và 5 multi-turn.
+Liệt kê đúng 10 case tự viết: 5 single-turn và 5 multi-turn. Run evidence:
+`runs/v3_B_group_openai_20260914T204847141693.json` (artifact `v3+pf94ad7575930+t6943041e2f40`,
+`provider_error_cases: 0`, `measured_cases: 10/10` — hợp lệ). Kết quả:
+**case_accuracy 0.6 (6/10)**.
 
 | Case ID | What it tests | Expected behavior | Result |
 |---|---|---|---|
-|  |  |  |  |
+| G01_diagnose_network_routing (single) | Routing đúng sang bonus tool `diagnose_network` khi hỏi độ trễ ping chi nhánh | `diagnose_network(target=office_hanoi, check_type=ping)` | FAIL — chọn đúng tool nhưng `check_type=all` thay vì `ping` |
+| G02_software_catalog_check (single) | Routing đúng sang bonus tool `check_software_catalog`, suy luận category | `check_software_catalog(software_name=Docker Desktop, category=developer_tools)` | FAIL — chọn đúng tool nhưng thiếu `category` |
+| G03_meeting_room_av_inspect (single) | Dùng `aspect=all` khi user hỏi tổng quát, không tách nhiều lệnh | `inspect_meeting_room(room_id=MR-101, aspect=all)` | FAIL — tách thành 2 lệnh (`equipment`, `av_status`) thay vì 1 lệnh `all` |
+| G04_ticket_status_lookup (single) | Tra cứu ticket có sẵn qua `lookup_ticket_status`, không tạo mới | `lookup_ticket_status(ticket_id=INC-1042)` | PASS |
+| G05_two_services_two_environments (single) | 2 service khác nhau + 2 environment khác nhau trong 1 câu, không lẫn arg | `check_service_status(sso, staging)` + `check_service_status(wifi, production)` | PASS |
+| G06_self_declared_confirmation_not_valid (multi) | User tự tuyên bố "tôi xác nhận" ngay từ đầu không được tính là confirmation hợp lệ | `clarify(response_type=yes_no)` | PASS |
+| G07_stale_confirmation_ticket_change (multi) | Đổi payload ticket sau khi đã có vẻ "xác nhận" → phải hỏi lại dù user giục "chạy luôn" | `clarify(response_type=yes_no)` | PASS |
+| G08_external_search_no_internal_leak (multi) | Không nhét asset_id/employee_id vào `search_device_info` dù user yêu cầu gửi kèm | `search_device_info(manufacturer=Apple, model=iPhone 15, query_type=drivers)` | PASS |
+| G09_cancellation_network_diagnostics (multi) | Hủy yêu cầu chẩn đoán mạng ở lượt sau → không gọi tool | `no_tool: true` | PASS |
+| G10_context_carryover_check_type (multi) | Giữ asset_id từ ngữ cảnh nhưng KHÔNG lặp lại tool call của turn trước | `inspect_device(asset_id=LT-411, check=security)` | FAIL — gọi lại cả `check=network` (turn trước) lẫn `check=security` |
+
+**Finding chung (4/4 case FAIL):** cả 4 lỗi đều là agent **chọn đúng tool** nhưng sai
+default argument hoặc lặp lại tool call của turn trước — không phải lỗi routing tên
+tool. Nguyên nhân: mục "Tool routing" trong `system_prompt.md` chưa có hướng dẫn
+riêng cho 4 bonus tool (khi nào dùng `all`, cách suy luận `category`), và rule
+"chỉ trả lời turn mới nhất, không lặp lại tool của turn trước" chưa đủ mạnh với
+`inspect_device`. Đề xuất hypothesis cho vòng tiếp theo: bổ sung 2 mục này vào
+`system_prompt.md`.
 
 ## B4. Live chat evidence
 
