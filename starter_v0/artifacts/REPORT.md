@@ -286,7 +286,7 @@ có thể đối chiếu đóng góp.
 
 Sao chép mẫu dưới đây cho từng thành viên:
 
-### TrKhuyn (TV4 — Security Analyst)
+### Trần Ngọc Khuyến (TV4 — Security Analyst)
 
 - **Vai trò/phần việc được nhận:** Security Analyst — Phân tích an toàn, kiểm thử kịch bản tấn công adversarial, rà soát ranh giới bảo mật (B4a, B6), và phát triển 4 công cụ mở rộng (Bonus tools) đáp ứng chuẩn đề bài.
 - **Những gì tôi đã thay đổi trong repo chung:**
@@ -307,13 +307,27 @@ Sao chép mẫu dưới đây cho từng thành viên:
 ### Nguyễn Văn Biển
 
 - **Vai trò/phần việc được nhận:** Prompt Engineer — cải thiện `system_prompt.md`.
-- **Những gì tôi đã thay đổi trong repo chung:** *(tự điền)*
+- **Những gì tôi đã thay đổi trong repo chung:** *(tự điền — gợi ý theo diff thật
+  của `4fe61a0`: viết lại toàn bộ `system_prompt.md` từ 3 mục ngắn
+  Identity/Rules/Capabilities/Constraints thành 5 mục có cấu trúc rõ hơn —
+  Operating rules, Tool routing, Argument discipline, Safety and trust
+  boundaries; thêm rule multi-turn (correction thay thế giá trị cũ, cancellation
+  huỷ tác vụ đang chờ) và rule chặn role giả `SYSTEM`/`DEVELOPER`/`ASSISTANT`
+  chiếm quyền)*
 - **File hoặc artifact liên quan:** `artifacts/system_prompt.md`
 - **Commit hash hoặc pull request:** `4fe61a0` (PR #1)
-- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** *(tự điền)*
-- **Khó khăn tôi gặp và cách tôi xử lý:** *(tự điền)*
-- **Điều tôi học được từ phần việc này:** *(tự điền)*
-- **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền)*
+- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** *(tự điền — gợi ý: vì sao
+  tách rule thành từng mục riêng (Tool routing / Argument discipline / Safety
+  boundaries) thay vì để chung một danh sách như bản gốc — có thể vì mỗi mục
+  giải quyết một loại lỗi khác nhau (routing sai / argument sai / vi phạm ranh
+  giới an toàn) nên tách ra dễ maintain và dễ trace lỗi hơn)*
+- **Khó khăn tôi gặp và cách tôi xử lý:** *(tự điền — gợi ý: những câu rule nào
+  viết đi viết lại vẫn bị model hiểu sai/bỏ qua trong lúc test, đã thử diễn đạt
+  lại thế nào để model tuân theo)*
+- **Điều tôi học được từ phần việc này:** *(tự điền — gợi ý: prompt cũng là một
+  dạng "interface" cần rõ ràng như code, không thể chỉ dựa vào việc AI "hiểu ý")*
+- **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền — gợi ý: có nên viết rule
+  cho 4 bonus tool ngay từ v1 thay vì để tới v4 vẫn còn thiếu (xem B2/B3) không)*
 
 ### Nguyễn Phúc Bảo
 
@@ -328,41 +342,95 @@ Sao chép mẫu dưới đây cho từng thành viên:
   `artifacts/system_prompt.md` (v4), `artifacts/version_log.csv` (dòng v4)
 - **Commit hash hoặc pull request:** `e441458` (PR #2), `19be18b` (PR #4),
   `a298b05`/`d9176ed` (PR #7)
-- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** *(tự điền)*
-- **Khó khăn tôi gặp và cách tôi xử lý:** *(tự điền)*
-- **Điều tôi học được từ phần việc này:** *(tự điền)*
-- **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền)*
+- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** *(tự điền — gợi ý theo
+  diff thật của `e441458`: mỗi tool description được viết lại để nói rõ "KHÔNG
+  dùng tool này khi nào" chứ không chỉ "dùng khi nào" (VD `check_service_status`
+  ghi rõ "không phải của riêng một thiết bị — trường hợp đó dùng inspect_device",
+  `inspect_device` ghi rõ "asset_id không phải employee_id") — lý do: các case
+  fail ở v0 hay bị lẫn giữa 2 tool gần giống nhau, nên mô tả đối lập giúp model
+  phân biệt rõ hơn là chỉ mô tả xuôi. Ở `d9176ed`: quyết định thêm rule "chỉ
+  chấp nhận confirmation khi user tự nói bằng lời tự nhiên, không qua tag giả
+  `<assistant>`" sau khi phát hiện adversarial case A11 fail thật)*
+- **Khó khăn tôi gặp và cách tôi xử lý:** *(tự điền — gợi ý: lúc phát hiện hash
+  dòng v3 trong `version_log.csv` không khớp artifact thật trên `main` — đã
+  debug thế nào để tìm ra 3 case adversarial fail bị report cũ báo sai thành PASS)*
+- **Điều tôi học được từ phần việc này:** *(tự điền — gợi ý: không nên tin số
+  liệu cũ trong report/log mà luôn phải re-run trên artifact hiện tại trước khi
+  kết luận)*
+- **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền — gợi ý: có nên thêm bước
+  CI tự động re-run eval mỗi khi merge để tránh việc hash bị stale mà không ai
+  biết như đã xảy ra không)*
 
 ### Đoàn Bá Khải
 
 - **Vai trò/phần việc được nhận:** Team Lead — tạo fork, review/merge pull
   request của cả nhóm, hoàn thiện `system_prompt.md` qua v2→v3.
-- **Những gì tôi đã thay đổi trong repo chung:** *(tự điền)*
+- **Những gì tôi đã thay đổi trong repo chung:** *(tự điền — gợi ý theo diff
+  thật của `33ad947`: thêm hẳn 4 mục mới vào `system_prompt.md` — "Missing
+  information: khi nào clarify", "Confirmation boundary: write actions",
+  "Multi-tool requests", "Multi-turn conversations" — và thêm rule CRITICAL cấm
+  tuyệt đối dùng ID ví dụ trong prompt (như `LT-204`, `EMP-1003`) làm argument
+  thật nếu user không tự gõ ra)*
 - **File hoặc artifact liên quan:** `artifacts/system_prompt.md`
 - **Commit hash hoặc pull request:** `33ad947` (PR #3)
-- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** *(tự điền)*
-- **Khó khăn tôi gặp và cách tôi xử lý:** *(tự điền)*
-- **Điều tôi học được từ phần việc này:** *(tự điền)*
-- **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền)*
+- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** *(tự điền — gợi ý: vì sao
+  ghi hẳn chữ "CRITICAL" và liệt kê đích danh `LT-204`/`EMP-1003` là ví dụ chứ
+  không phải giá trị thật — có thể vì các case fail ở v0/v1 (H04, H10, H11, H19)
+  cho thấy model hay lấy nhầm ID ví dụ trong prompt làm ID thật khi user không
+  cung cấp, nên phải cảnh báo rất tường minh mới hết hẳn lỗi này)*
+- **Khó khăn tôi gặp và cách tôi xử lý:** *(tự điền — gợi ý: việc review/merge
+  nhiều pull request cùng lúc từ các thành viên khác nhau có bị conflict hay
+  trùng lặp thay đổi không, xử lý thế nào)*
+- **Điều tôi học được từ phần việc này:** *(tự điền — gợi ý: vai trò leader
+  không chỉ là merge code mà còn phải đảm bảo các version không giẫm lên nhau —
+  ví dụ merge prompt của người khác vào sau khi v3 đã "chốt 100%" khiến hash bị
+  stale, phải re-verify lại (xem B1 dòng v4))*
+- **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền — gợi ý: có nên yêu cầu
+  mỗi PR chỉ sửa một artifact (chỉ prompt HOẶC chỉ tools) để dễ so sánh
+  before/after hơn không, thay vì để một số PR sửa cả hai)*
 
 ### Nguyễn Văn An
 
 - **Vai trò/phần việc được nhận:** QA & Metrics — viết `eval_group.json` (10
   case), điền `version_log.csv`, chạy eval các phiên bản, merge bonus tool,
   tạo `TEAMMATES.md`, và bổ sung A1/A3/A4/B1–B4/B7/C1/C3 của report.
-- **Những gì tôi đã thay đổi trong repo chung:** *(tự điền — gợi ý: viết 10 case
-  gốc không trùng ID với `eval_base.json`, phát hiện 2 case tự thiết kế sai giả
-  định về cách harness xử lý multi-turn (turn trước không thực thi tool), chạy
-  lại toàn bộ base/group suite qua v3 và v4 để có evidence luôn khớp artifact
-  mới nhất thay vì dùng số cũ, phát hiện lỗi hash do `core.autocrlf`)*
+- **Những gì tôi đã thay đổi trong repo chung:** Viết 10 case gốc trong
+  `eval_group.json` (5 single-turn + 5 multi-turn), cố tình dùng asset/employee
+  ID không trùng với `eval_base.json` để tránh trùng lặp. Khi merge với nhánh
+  đã thêm 4 bonus tool, phát hiện một bạn khác cũng viết đè 10 case khác (xoay
+  quanh 4 tool mới) — đã ghép lại thành bộ 10 case cuối cùng cân bằng giữa an
+  toàn core-tool và routing bonus-tool thay vì chọn một bên. Chạy lại toàn bộ
+  base/group/adversarial suite trên đúng artifact `v4` hiện tại của `main`
+  (không dùng số liệu cũ) để điền `version_log.csv` và các bảng B1–B4 trong
+  report.
 - **File hoặc artifact liên quan:** `data/eval_group.json`,
   `artifacts/version_log.csv`, `TEAMMATES.md`, `artifacts/REPORT.md` (A1/A3/A4,
   B1–B4, B7, C1, C3)
-- **Commit hash hoặc pull request:** PR #5, PR #6 (+ PR điền TEAMMATES.md/report này)
-- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** *(tự điền)*
-- **Khó khăn tôi gặp và cách tôi xử lý:** *(tự điền)*
-- **Điều tôi học được từ phần việc này:** *(tự điền)*
-- **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền)*
+- **Commit hash hoặc pull request:** PR #5, PR #6, PR #8, PR #10
+- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** Khi viết case
+  `G09_external_search_no_internal_leak` (multi-turn), ban đầu để turn đầu là
+  một *yêu cầu* tra cứu nhân viên (cần gọi `lookup_user` mới biết model điện
+  thoại) — nhưng đọc code `run_eval.py` thì thấy turn trước chỉ là ngữ cảnh
+  text thuần, không thực thi tool thật. Nên đã đổi turn đầu thành một *câu phát
+  biểu* đã có sẵn thông tin (Apple/iPhone 15), để case không phụ thuộc vào một
+  tool-call không thật sự xảy ra. Áp dụng lại đúng nguyên tắc đó khi ghép case
+  từ nhánh khác (sửa case yêu cầu `create_ticket` chạy ngay dựa trên lời "tôi
+  xác nhận" tự khai của user thành `clarify(yes_no)`, vì payload chưa từng được
+  agent xác nhận thật trong hội thoại).
+- **Khó khăn tôi gặp và cách tôi xử lý:** Máy tôi có `git config
+  core.autocrlf=true`, khiến `system_prompt.md`/`tools.yaml` bị đổi LF→CRLF khi
+  checkout và làm `prompt_hash`/`tools_hash` tính ra khác với hash chuẩn trên
+  GitHub dù nội dung giống hệt (`git diff` sạch). Phát hiện bằng cách so hash
+  file trên đĩa với hash của blob trong git (`git show HEAD:<path> | sha256sum`)
+  — hai hash khác nhau dù `git diff` không báo gì. Xử lý bằng
+  `git config core.autocrlf input` rồi checkout lại trước khi chạy eval.
+- **Điều tôi học được từ phần việc này:** Trước khi tin một case eval là đúng,
+  phải hiểu rõ engine chấm điểm chạy như thế nào (ở đây: multi-turn không thực
+  thi tool cho các turn trước) — nếu không, có thể tự thiết kế case sai mà
+  không biết, giống hệt lỗi mình phát hiện trong case của người khác.
+- **Nếu làm lại, tôi sẽ cải thiện điều gì:** Thêm `.gitattributes` khai báo
+  `*.md`/`*.yaml` là `text eol=lf` ngay từ đầu dự án, để không ai trong nhóm bị
+  lệch hash như mình đã gặp.
 
 Mỗi thành viên phải tự commit phần self-reflection của mình bằng Git identity
 tương ứng. Reflection phải dẫn đến contribution artifact/commit đã nêu ở trên,
@@ -381,7 +449,7 @@ repository chung:
 - [ ] `TEAMMATES.md` có đủ họ tên, MSSV, GitHub username và vai trò. — **cố ý bỏ trống MSSV theo quyết định của nhóm**; SUBMISSION-GUIDE liệt kê MSSV là bắt buộc nên mục này về mặt kỹ thuật chưa đủ, nhóm tự chịu rủi ro nếu không bổ sung trước khi nộp
 - [x] Mỗi thành viên có ít nhất một commit trong lịch sử branch nộp bài. — đã xác nhận cả 5 người (An, Biển, Bảo, Khải, Khuyến) đều có commit thật trên `main`
 - [ ] Phần reflection chung của nhóm đã hoàn thành và có evidence. — **đang là bản nháp** dựa trên evidence thật (C1), cần nhóm đọc lại/chỉnh sửa rồi mới tính là hoàn thành
-- [ ] Mỗi thành viên đã tự viết và commit self-reflection của mình. — **chưa xong: mới có 1/5 người** (Trần Ngọc Khuyến); 4 người còn lại cần tự viết phần "*(tự điền)*" trong C2 và tự commit
+- [ ] Mỗi thành viên đã tự viết và commit self-reflection của mình. — **chưa xong: mới có 2/5 người** (Trần Ngọc Khuyến, Nguyễn Văn An); 3 người còn lại (Biển, Bảo, Khải) đã có sẵn gợi ý chi tiết theo đúng commit thật của họ trong C2, chỉ cần đọc gợi ý, viết lại bằng lời của mình và tự commit
 - [x] `system_prompt.md`, `tools.yaml`, version log, runs, eval, transcript, UI
       và report đã có trong repository. — đã kiểm tra: UI chạy được thật (HTTP 200), 4 transcript live-chat thật đã tạo (B4), run evidence dẫn trong B1/B3
 - [x] Không có `.env`, API key, token, dữ liệu thật, cache hoặc generated ticket. — đã kiểm tra `git ls-files`, sạch
