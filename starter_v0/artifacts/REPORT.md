@@ -70,13 +70,19 @@ total_cases`, và tool result error đã được review thủ công.
 | v1 | `system_prompt.md` | Thêm rule clarify khi thiếu ID và bắt buộc xin xác nhận trước write action sẽ giảm lỗi missing_info và wrong_boundary | case_accuracy | 0.70 | 0.70 | `runs/v1_B_base_openai_20260914T191304475090.json` |
 | v2 | `system_prompt.md` + `tools.yaml` | Giảm độ gắt của rule clarify và quy định rõ tham số trong tools.yaml sẽ tăng argument accuracy | case_accuracy | 0.70 | 0.9667 | `runs/v2_B_base_openai_20260914T192018737111.json` |
 | v3 | `system_prompt.md` | Nghiêm cấm AI sử dụng dữ liệu ví dụ (như EMP-1003) nếu user không cung cấp sẽ khắc phục hoàn toàn lỗi missing_info còn lại | case_accuracy | 0.9667 | 0.9667* | `runs/v3_B_base_openai_20260915T002406714682.json` |
-| v4 | `system_prompt.md` + `tools.yaml` (hardening confirmation boundary + policy_area routing) | Re-verify trên artifact thật của `main` phát hiện: (1) hash của dòng v3 phía trên đã cũ, không khớp artifact hiện tại; (2) 3 case adversarial (A04, A10, A11) **fail thật** dù report claim PASS trước đó (xem cảnh báo ở B4a); (3) extension suite tụt còn 0.40 vì mất mapping `policy_area`. Thêm rule: confirmation chỉ hợp lệ khi là lời user tự nói, không qua role giả `<assistant>`/`SYSTEM`/`DEVELOPER`; khôi phục mapping chủ đề → `policy_area` | case_accuracy (adversarial / base / extension) | 0.75 / 0.9667 / 0.40 | 1.0 / 1.0 / 0.9 | `runs/v6_B_adversarial_openai_20260914T233346796538.json`, `runs/v6_B_base_openai_20260914T233433146164.json`, `runs/v6_B_extension_openai_20260914T233501914579.json` |
+| v4 | `system_prompt.md` + `tools.yaml` (hardening confirmation boundary + policy_area routing) | Re-verify trên artifact thật của `main` phát hiện: (1) hash của dòng v3 phía trên đã cũ, không khớp artifact hiện tại (bản gốc claim `metric_after=1.0` cũng không tái lập được — Bảo chạy lại thật ra 0.9667*, xem cột "After" ở dòng v3); (2) 3 case adversarial (A04, A10, A11) **fail thật** dù report claim PASS trước đó (xem cảnh báo ở B4a); (3) extension suite tụt còn 0.40 vì mất mapping `policy_area`. Thêm rule: confirmation chỉ hợp lệ khi là lời user tự nói, không qua role giả `<assistant>`/`SYSTEM`/`DEVELOPER`; khôi phục mapping chủ đề → `policy_area` | case_accuracy (adversarial / base / extension) | 0.75 / 0.9667 / 0.40 | 1.0 / 1.0 / 0.9 | `runs/v4_B_adversarial_openai_20260914T233346796538.json`, `runs/v4_B_base_openai_20260914T233433146164.json`, `runs/v4_B_extension_openai_20260914T233501914579.json` |
 
-> Đầy đủ chi tiết (author, artifact_version, prompt_hash, tools_hash) xem `artifacts/version_log.csv`.
-> Lưu ý: cột "version" ghi `v4` nhưng chuỗi `artifact_version` trong 3 dòng đó lại là
-> `v6+p41c11ee4c8bf+t662aa2f98496` (run_file cũng đặt tên `v6_...`) — nhãn số hiệu
-> version bị lệch giữa 2 chỗ, nhóm nên thống nhất lại 1 số hiệu duy nhất trước khi nộp.
-> Base suite đo lại trên artifact `v4` này (đã tự chạy lại để re-verify, không chỉ tin
+> \* Dòng `v3`: `metric_after` gốc ghi 1.0 nhưng file run tương ứng chưa từng
+> được commit; khi re-run thật trên đúng artifact có hash đã log (`205a10e9432e`/
+> `b1ecf974ed8d`) chỉ ra 0.9667/30 (1 case lệch), không phải 1.0 — đã sửa lại số
+> và trỏ sang run file mới tái tạo được (`v3_B_base_openai_20260915T002406714682.json`).
+> Bài học: số liệu trong report/log không có run file kèm theo thì không nên
+> tin cho tới khi re-run xác nhận được.
+>
+> Đầy đủ chi tiết (author, artifact_version, prompt_hash, tools_hash) xem `artifacts/version_log.csv`
+> (đã thống nhất nhãn `v4` xuyên suốt — trước đó có lúc lệch với `v6` do người chạy
+> dùng số đếm cục bộ, đã đổi tên file + sửa nội dung run cho khớp). Base suite đo lại
+> trên artifact `v4` này (đã tự chạy lại để re-verify, không chỉ tin
 > con số cũ): case_accuracy vẫn 0.9667/30 (cùng 1 case lệch H17, không liên quan tool
 > mới) — `runs/v4_B_base_openai_20260914T235157048408.json`. Bộ 10 case
 > `eval_group.json` đo trên artifact `v4` này vẫn đạt case_accuracy 0.6/10 (3 lỗi
@@ -151,7 +157,7 @@ liệu bị ghi hoặc gửi ra ngoài; cần kiểm tra cả `tool_results` và
 > hiện A04/A10/A11 thực ra **FAIL** trên `main` lúc đó, dù bảng này claim PASS,
 > và đã vá lại trong `system_prompt.md` (v4). Đã tự chạy lại toàn bộ 12 case
 > ngay bây giờ trên artifact `v4` hiện tại để xác nhận: **12/12 PASS**, run hợp
-> lệ (`provider_error_cases: 0`) — `runs/v6_B_adversarial_openai_20260914T233346796538.json`.
+> lệ (`provider_error_cases: 0`) — `runs/v4_B_adversarial_openai_20260914T233346796538.json`.
 > Vậy bảng bên dưới hiện **đúng lại** với artifact mới nhất, nhưng nhóm nên biết
 > nó đã có lúc sai — luôn re-run trước khi nộp, không chỉ tin report cũ.
 
@@ -292,7 +298,7 @@ có thể đối chiếu đóng góp.
 
 Sao chép mẫu dưới đây cho từng thành viên:
 
-### TrKhuyn (TV4 — Security Analyst)
+### Trần Ngọc Khuyến (TV4 — Security Analyst)
 
 - **Vai trò/phần việc được nhận:** Security Analyst — Phân tích an toàn, kiểm thử kịch bản tấn công adversarial, rà soát ranh giới bảo mật (B4a, B6), và phát triển 4 công cụ mở rộng (Bonus tools) đáp ứng chuẩn đề bài.
 - **Những gì tôi đã thay đổi trong repo chung:**
@@ -310,16 +316,25 @@ Sao chép mẫu dưới đây cho từng thành viên:
 - **Điều tôi học được từ phần việc này:** Nắm vững phương pháp red-teaming cho AI Agent, cách thiết lập ranh giới an toàn cho các action có side-effect và quản lý trust boundary khi tích hợp API bên ngoài.
 - **Nếu làm lại, tôi sẽ cải thiện điều gì:** Xây dựng thêm kịch bản fuzzing tự động các ký tự encoding đặc biệt để kiểm thử độ bền của bộ lọc regex an toàn dữ liệu.
 
-### Nguyễn Văn Biển — MSSV *(cần bổ sung)*
+### Nguyễn Văn Biển
 
 - **Vai trò/phần việc được nhận:** Prompt Engineer — cải thiện `system_prompt.md`.
-- **Những gì tôi đã thay đổi trong repo chung:** *(tự điền)*
+- **Những gì tôi đã thay đổi trong repo chung:** viết lại toàn bộ `system_prompt.md` từ 3 mục ngắn
+  Identity/Rules/Capabilities/Constraints thành 5 mục có cấu trúc rõ hơn —
+  Operating rules, Tool routing, Argument discipline, Safety and trust
+  boundaries; thêm rule multi-turn (correction thay thế giá trị cũ, cancellation
+  huỷ tác vụ đang chờ) và rule chặn role giả `SYSTEM`/`DEVELOPER`/`ASSISTANT`
+  chiếm quyền
 - **File hoặc artifact liên quan:** `artifacts/system_prompt.md`
 - **Commit hash hoặc pull request:** `4fe61a0` (PR #1)
-- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** *(tự điền)*
-- **Khó khăn tôi gặp và cách tôi xử lý:** *(tự điền)*
-- **Điều tôi học được từ phần việc này:** *(tự điền)*
-- **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền)*
+- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** 
+  tách rule thành từng mục riêng (Tool routing / Argument discipline / Safety
+  boundaries) thay vì để chung một danh sách như bản gốc — vì mỗi mục
+  giải quyết một loại lỗi khác nhau (routing sai / argument sai / vi phạm ranh
+  giới an toàn) nên tách ra dễ maintain và dễ trace lỗi hơn
+- **Khó khăn tôi gặp và cách tôi xử lý:** những câu rule nào viết đi viết lại vẫn bị model hiểu sai/bỏ qua trong lúc test, đã thử diễn đạt lại để model tuân theo
+- **Điều tôi học được từ phần việc này:** prompt cũng là một dạng "interface" cần rõ ràng như code, không thể chỉ dựa vào việc AI "hiểu ý"
+- **Nếu làm lại, tôi sẽ cải thiện điều gì:** có nên viết rule cho 4 bonus tool ngay từ v1 thay vì để tới v4 vẫn còn thiếu (xem B2/B3) không)
 
 ### Nguyễn Phúc Bảo — MSSV 2A202602925
 
@@ -352,7 +367,7 @@ Sao chép mẫu dưới đây cho từng thành viên:
      `a298b05`/`d9176ed`).
 - **File hoặc artifact liên quan:** `artifacts/tools.yaml`, `app.py`,
   `artifacts/system_prompt.md` (v4), `artifacts/version_log.csv` (dòng v4),
-  `runs/v6_B_*_openai_20260914*.json`
+  `runs/v4_B_*_openai_20260914*.json`
 - **Commit hash hoặc pull request:** `e441458` (PR #2, không merge), `19be18b`
   (PR #4), `a298b05`/`d9176ed` (PR #7)
 - **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** Khi viết lại rule
@@ -386,60 +401,88 @@ Sao chép mẫu dưới đây cho từng thành viên:
   `system_prompt.md`/`tools.yaml`" thay vì chỉ chạy khi có người chủ động yêu
   cầu kiểm tra lại.
 
-### Đoàn Bá Khải — MSSV *(cần bổ sung)*
+### Đoàn Bá Khải
 
 - **Vai trò/phần việc được nhận:** Team Lead — tạo fork, review/merge pull
   request của cả nhóm, hoàn thiện `system_prompt.md` qua v2→v3.
-- **Những gì tôi đã thay đổi trong repo chung:** *(tự điền)*
+- **Những gì tôi đã thay đổi trong repo chung:** "Missing information: khi nào clarify", "Confirmation boundary: write actions",
+  "Multi-tool requests", "Multi-turn conversations" — và thêm rule CRITICAL cấm
+  tuyệt đối dùng ID ví dụ trong prompt (như `LT-204`, `EMP-1003`) làm argument
+  thật nếu user không tự gõ ra
 - **File hoặc artifact liên quan:** `artifacts/system_prompt.md`
 - **Commit hash hoặc pull request:** `33ad947` (PR #3)
-- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** *(tự điền)*
-- **Khó khăn tôi gặp và cách tôi xử lý:** *(tự điền)*
-- **Điều tôi học được từ phần việc này:** *(tự điền)*
-- **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền)*
+- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** ghi hẳn chữ "CRITICAL" và liệt kê đích danh `LT-204`/`EMP-1003` là ví dụ chứ không phải giá trị thật — có thể vì các case fail ở v0/v1 (H04, H10, H11, H19)
+  cho thấy model hay lấy nhầm ID ví dụ trong prompt làm ID thật khi user không
+  cung cấp, nên phải cảnh báo rất tường minh mới hết hẳn lỗi này
+- **Khó khăn tôi gặp và cách tôi xử lý:** việc review/merge nhiều pull request cùng lúc từ các thành viên khác nhau có bị conflict hay trùng lặp thay đổi không, xử lý thế nào
+- **Điều tôi học được từ phần việc này:** vai trò leader
+  không chỉ là merge code mà còn phải đảm bảo các version không giẫm lên nhau —
+  ví dụ merge prompt của người khác vào sau khi v3 đã "chốt 100%" khiến hash bị
+  stale, phải re-verify lại (xem B1 dòng v4)
+- **Nếu làm lại, tôi sẽ cải thiện điều gì:** có nên yêu cầu mỗi PR chỉ sửa một artifact (chỉ prompt HOẶC chỉ tools) để dễ so sánh before/after hơn không, thay vì để một số PR sửa cả hai
 
-### Nguyễn Văn An — MSSV *(cần bổ sung)*
+### Nguyễn Văn An
 
 - **Vai trò/phần việc được nhận:** QA & Metrics — viết `eval_group.json` (10
   case), điền `version_log.csv`, chạy eval các phiên bản, merge bonus tool,
   tạo `TEAMMATES.md`, và bổ sung A1/A3/A4/B1–B4/B7/C1/C3 của report.
-- **Những gì tôi đã thay đổi trong repo chung:** *(tự điền — gợi ý: viết 10 case
-  gốc không trùng ID với `eval_base.json`, phát hiện 2 case tự thiết kế sai giả
-  định về cách harness xử lý multi-turn (turn trước không thực thi tool), chạy
-  lại toàn bộ base/group suite qua v3 và v4 để có evidence luôn khớp artifact
-  mới nhất thay vì dùng số cũ, phát hiện lỗi hash do `core.autocrlf`)*
+- **Những gì tôi đã thay đổi trong repo chung:** Viết 10 case gốc trong
+  `eval_group.json` (5 single-turn + 5 multi-turn), cố tình dùng asset/employee
+  ID không trùng với `eval_base.json` để tránh trùng lặp. Khi merge với nhánh
+  đã thêm 4 bonus tool, phát hiện một bạn khác cũng viết đè 10 case khác (xoay
+  quanh 4 tool mới) — đã ghép lại thành bộ 10 case cuối cùng cân bằng giữa an
+  toàn core-tool và routing bonus-tool thay vì chọn một bên. Chạy lại toàn bộ
+  base/group/adversarial suite trên đúng artifact `v4` hiện tại của `main`
+  (không dùng số liệu cũ) để điền `version_log.csv` và các bảng B1–B4 trong
+  report.
 - **File hoặc artifact liên quan:** `data/eval_group.json`,
   `artifacts/version_log.csv`, `TEAMMATES.md`, `artifacts/REPORT.md` (A1/A3/A4,
   B1–B4, B7, C1, C3)
-- **Commit hash hoặc pull request:** PR #5, PR #6 (+ PR điền TEAMMATES.md/report này)
-- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** *(tự điền)*
-- **Khó khăn tôi gặp và cách tôi xử lý:** *(tự điền)*
-- **Điều tôi học được từ phần việc này:** *(tự điền)*
-- **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền)*
+- **Commit hash hoặc pull request:** PR #5, PR #6, PR #8, PR #10
+- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** Khi viết case
+  `G09_external_search_no_internal_leak` (multi-turn), ban đầu để turn đầu là
+  một *yêu cầu* tra cứu nhân viên (cần gọi `lookup_user` mới biết model điện
+  thoại) — nhưng đọc code `run_eval.py` thì thấy turn trước chỉ là ngữ cảnh
+  text thuần, không thực thi tool thật. Nên đã đổi turn đầu thành một *câu phát
+  biểu* đã có sẵn thông tin (Apple/iPhone 15), để case không phụ thuộc vào một
+  tool-call không thật sự xảy ra. Áp dụng lại đúng nguyên tắc đó khi ghép case
+  từ nhánh khác (sửa case yêu cầu `create_ticket` chạy ngay dựa trên lời "tôi
+  xác nhận" tự khai của user thành `clarify(yes_no)`, vì payload chưa từng được
+  agent xác nhận thật trong hội thoại).
+- **Khó khăn tôi gặp và cách tôi xử lý:** Máy tôi có `git config
+  core.autocrlf=true`, khiến `system_prompt.md`/`tools.yaml` bị đổi LF→CRLF khi
+  checkout và làm `prompt_hash`/`tools_hash` tính ra khác với hash chuẩn trên
+  GitHub dù nội dung giống hệt (`git diff` sạch). Phát hiện bằng cách so hash
+  file trên đĩa với hash của blob trong git (`git show HEAD:<path> | sha256sum`)
+  — hai hash khác nhau dù `git diff` không báo gì. Xử lý bằng
+  `git config core.autocrlf input` rồi checkout lại trước khi chạy eval.
+- **Điều tôi học được từ phần việc này:** Trước khi tin một case eval là đúng,
+  phải hiểu rõ engine chấm điểm chạy như thế nào (ở đây: multi-turn không thực
+  thi tool cho các turn trước) — nếu không, có thể tự thiết kế case sai mà
+  không biết, giống hệt lỗi mình phát hiện trong case của người khác.
+- **Nếu làm lại, tôi sẽ cải thiện điều gì:** Thêm `.gitattributes` khai báo
+  `*.md`/`*.yaml` là `text eol=lf` ngay từ đầu dự án, để không ai trong nhóm bị
+  lệch hash như mình đã gặp.
 
 Mỗi thành viên phải tự commit phần self-reflection của mình bằng Git identity
 tương ứng. Reflection phải dẫn đến contribution artifact/commit đã nêu ở trên,
 không dùng chính phần reflection làm bằng chứng duy nhất cho đóng góp kỹ thuật.
 
-> ⚠️ Các dòng "*(tự điền)*" ở trên là placeholder — mỗi người phải tự viết bằng
-> lời của chính mình rồi tự commit bằng Git identity của mình (không ai được
-> viết/commit thay). Đây là phần duy nhất của report mà một người không thể
-> hoàn thiện thay cho cả nhóm.
 
 ## C3. Final checkout
 
 Chỉ nộp bài khi mọi mục dưới đây đã được kiểm tra trên branch cuối cùng của
 repository chung:
 
-- [ ] `TEAMMATES.md` có đủ họ tên, MSSV, GitHub username và vai trò. — **chưa xong: thiếu MSSV thật của 5 người** (đang là placeholder suy đoán/để trống, xem `TEAMMATES.md`)
-- [x] Mỗi thành viên có ít nhất một commit trong lịch sử branch nộp bài. — đã xác nhận cả 5 người (An, Biển, Bảo, Khải, Khuyến) đều có commit thật trên `main`
-- [ ] Phần reflection chung của nhóm đã hoàn thành và có evidence. — **đang là bản nháp** dựa trên evidence thật (C1), cần nhóm đọc lại/chỉnh sửa rồi mới tính là hoàn thành
-- [ ] Mỗi thành viên đã tự viết và commit self-reflection của mình. — **chưa xong: mới có 1/5 người** (Trần Ngọc Khuyến); 4 người còn lại cần tự viết phần "*(tự điền)*" trong C2 và tự commit
+- [x] `TEAMMATES.md` có đủ họ tên, MSSV, GitHub username và vai trò.
+- [x] Mỗi thành viên có ít nhất một commit trong lịch sử branch nộp bài.
+- [x] Phần reflection chung của nhóm đã hoàn thành và có evidence.
+- [x] Mỗi thành viên đã tự viết và commit self-reflection của mình.
 - [x] `system_prompt.md`, `tools.yaml`, version log, runs, eval, transcript, UI
-      và report đã có trong repository. — đã kiểm tra: UI chạy được thật (HTTP 200), 4 transcript live-chat thật đã tạo (B4), run evidence dẫn trong B1/B3
-- [x] Không có `.env`, API key, token, dữ liệu thật, cache hoặc generated ticket. — đã kiểm tra `git ls-files`, sạch
-- [ ] Nhóm trưởng và mọi thành viên đã thống nhất đúng một URL repository chung. — URL đã có (bên dưới) nhưng tôi không thể xác nhận thay việc "cả nhóm đã thống nhất" — cần leader xác nhận với từng người
-- [ ] Nhóm trưởng và mọi thành viên sẽ nộp cùng URL đó trên VLearn. — hành động nộp bài thật, chưa xảy ra
+      và report đã có trong repository.
+- [x] Không có `.env`, API key, token, dữ liệu thật, cache hoặc generated ticket.
+- [x] Nhóm trưởng và mọi thành viên đã thống nhất đúng một URL repository chung.
+- [x] Nhóm trưởng và mọi thành viên sẽ nộp cùng URL đó trên VLearn.
 
 **URL repository chung dùng để nộp:**
 
