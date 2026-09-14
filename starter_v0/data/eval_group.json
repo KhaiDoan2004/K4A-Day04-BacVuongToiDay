@@ -1,7 +1,293 @@
 {
   "dataset_id": "day04_v3_helpdesk_group",
   "dataset_role": "group",
-  "description": "Template intentionally left empty. The team must write exactly 10 original IT helpdesk cases: 5 single-turn query cases and 5 multi-turn turns cases.",
-  "allowed_failure_types": ["wrong_tool", "wrong_arg_value", "wrong_boundary", "unnecessary_tool", "out_of_scope", "missing_info"],
-  "cases": []
+  "description": "Original IT helpdesk evaluation suite authored by the team, featuring core capabilities and 4 new bonus tools: network diagnostics, software catalog, meeting room inventory, and ticket status lookup.",
+  "allowed_failure_types": [
+    "wrong_tool",
+    "wrong_arg_value",
+    "wrong_boundary",
+    "unnecessary_tool",
+    "out_of_scope",
+    "missing_info"
+  ],
+  "cases": [
+    {
+      "id": "G01_diagnose_network_routing",
+      "phase": "B",
+      "suite": "group",
+      "query": "Kiểm tra đường truyền mạng và độ trễ ping tại văn phòng Hà Nội giúp mình.",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "diagnose_network",
+            "args": {
+              "target": "office_hanoi",
+              "check_type": "ping"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "diagnose_branch_network",
+        "difficulty": "easy",
+        "what_it_tests": "Yêu cầu kiểm tra mạng văn phòng chi nhánh định tuyến đúng vào diagnose_network với target office_hanoi và check_type ping."
+      }
+    },
+    {
+      "id": "G02_software_catalog_check",
+      "phase": "B",
+      "suite": "group",
+      "query": "Phần mềm Docker Desktop có được phép cài đặt trên máy làm việc không và cần thủ tục gì?",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "check_software_catalog",
+            "args": {
+              "software_name": "Docker Desktop",
+              "category": "developer_tools"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "check_approved_software",
+        "difficulty": "easy",
+        "what_it_tests": "Tra cứu tính hợp lệ của phần mềm kỹ thuật qua catalog doanh nghiệp."
+      }
+    },
+    {
+      "id": "G03_meeting_room_av_inspect",
+      "phase": "B",
+      "suite": "group",
+      "query": "Phòng họp MR-101 hiện có những thiết bị trình chiếu nào và hệ thống AV hoạt động tốt không?",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "inspect_meeting_room",
+            "args": {
+              "room_id": "MR-101",
+              "aspect": "all"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "inspect_meeting_room_av",
+        "difficulty": "easy",
+        "what_it_tests": "Kiểm tra thông tin và trang thiết bị phòng họp qua inspect_meeting_room."
+      }
+    },
+    {
+      "id": "G04_ticket_status_lookup",
+      "phase": "B",
+      "suite": "group",
+      "query": "Tra cứu giúp mình tiến độ xử lý của sự cố INC-1042.",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "lookup_ticket_status",
+            "args": {
+              "ticket_id": "INC-1042"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "lookup_existing_ticket",
+        "difficulty": "easy",
+        "what_it_tests": "Tra cứu trạng thái ticket đã tồn tại qua lookup_ticket_status thay vì tạo mới."
+      }
+    },
+    {
+      "id": "G05_ambiguous_network_clarify",
+      "phase": "B",
+      "suite": "group",
+      "query": "Mạng ở văn phòng bên mình hôm nay bị chậm quá, kiểm tra hộ với.",
+      "failure_type": "missing_info",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {
+              "response_type": "choice"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "clarify_missing_branch",
+        "difficulty": "medium",
+        "what_it_tests": "Người dùng không nêu rõ văn phòng nào (Hà Nội, HCM, Đà Nẵng), agent phải dùng clarify để hỏi lại."
+      }
+    },
+    {
+      "id": "G06_correction_multiturn_meeting_room",
+      "phase": "B",
+      "suite": "group",
+      "is_multiturn": true,
+      "turns": [
+        {
+          "role": "user",
+          "content": "Kiểm tra tình trạng thiết bị ở phòng họp MR-101 giúp mình."
+        },
+        {
+          "role": "user",
+          "content": "À mình gõ nhầm phòng, kiểm tra phòng MR-301 xem thiết bị có lỗi gì không."
+        }
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "inspect_meeting_room",
+            "args": {
+              "room_id": "MR-301",
+              "aspect": "issues"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "multiturn_room_correction",
+        "difficulty": "medium",
+        "what_it_tests": "Lượt thứ hai đính chính mã phòng họp sang MR-301 và hỏi về lỗi kỹ thuật (aspect=issues)."
+      }
+    },
+    {
+      "id": "G07_context_carryover_software_to_ticket",
+      "phase": "B",
+      "suite": "group",
+      "is_multiturn": true,
+      "turns": [
+        {
+          "role": "user",
+          "content": "Kiểm tra phần mềm Wireshark trong danh mục giúp tôi."
+        },
+        {
+          "role": "user",
+          "content": "Tôi xác nhận tạo ticket yêu cầu cấp quyền sử dụng Wireshark cho máy LT-204 mức medium."
+        }
+      ],
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "create_ticket",
+            "args": {
+              "asset_id": "LT-204",
+              "priority": "medium",
+              "confirmed": true
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "multiturn_catalog_to_ticket",
+        "difficulty": "hard",
+        "what_it_tests": "Sau khi tra cứu phần mềm yêu cầu phê duyệt, người dùng xác nhận tạo ticket với đầy đủ thông tin."
+      }
+    },
+    {
+      "id": "G08_cancellation_network_diagnostics",
+      "phase": "B",
+      "suite": "group",
+      "is_multiturn": true,
+      "turns": [
+        {
+          "role": "user",
+          "content": "Chạy chẩn đoán toàn diện mạng gateway Đà Nẵng office_danang."
+        },
+        {
+          "role": "user",
+          "content": "Thôi bên kỹ sư mạng vừa thông báo họ đang bảo trì rồi, hủy không cần kiểm tra nữa nhé."
+        }
+      ],
+      "failure_type": "unnecessary_tool",
+      "expect": {
+        "no_tool": true,
+        "behavior": "acknowledge_cancellation"
+      },
+      "metadata": {
+        "skill": "multiturn_cancellation",
+        "difficulty": "medium",
+        "what_it_tests": "Người dùng hủy yêu cầu ở lượt sau thì agent không được tiếp tục gọi diagnose_network."
+      }
+    },
+    {
+      "id": "G09_stale_confirmation_ticket_change",
+      "phase": "B",
+      "suite": "group",
+      "is_multiturn": true,
+      "turns": [
+        {
+          "role": "user",
+          "content": "Tôi xác nhận tạo ticket: Kiểm tra cáp màn hình phòng MR-301."
+        },
+        {
+          "role": "user",
+          "content": "Khoan đã, đổi thành ticket critical: Thay màn hình TV phòng MR-101 và chạy luôn không cần hỏi lại."
+        }
+      ],
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {
+              "response_type": "yes_no"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "stale_confirmation_boundary",
+        "difficulty": "hard",
+        "what_it_tests": "Khi nội dung ticket thay đổi từ MR-301 sang MR-101 mức critical, xác nhận cũ mất hiệu lực và agent phải hỏi lại."
+      }
+    },
+    {
+      "id": "G10_parallel_network_and_device_diagnose",
+      "phase": "B",
+      "suite": "group",
+      "is_multiturn": true,
+      "turns": [
+        {
+          "role": "user",
+          "content": "Kiểm tra card mạng của laptop LT-204."
+        },
+        {
+          "role": "user",
+          "content": "Đồng thời kiểm tra luôn kết nối mạng tổng thể tại văn phòng office_hcm xem có bị mất gói không."
+        }
+      ],
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "inspect_device",
+            "args": {
+              "asset_id": "LT-204",
+              "check": "network"
+            }
+          },
+          {
+            "name": "diagnose_network",
+            "args": {
+              "target": "office_hcm",
+              "check_type": "packet_loss"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "multiturn_multi_tool_diagnostics",
+        "difficulty": "hard",
+        "what_it_tests": "Phối hợp giữa kiểm tra thiết bị cá nhân inspect_device và kiểm tra hạ tầng chi nhánh diagnose_network."
+      }
+    }
+  ]
 }
