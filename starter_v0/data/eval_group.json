@@ -1,7 +1,196 @@
 {
   "dataset_id": "day04_v3_helpdesk_group",
   "dataset_role": "group",
-  "description": "Template intentionally left empty. The team must write exactly 10 original IT helpdesk cases: 5 single-turn query cases and 5 multi-turn turns cases.",
+  "description": "10 original IT helpdesk cases written by the team: 5 single-turn and 5 multi-turn, covering failure modes not duplicated from eval_base.json (fresh asset/employee identifiers: LT-411, MB-012, RM-501, EMP-1004, EMP-1006, EMP-1008, EMP-1010).",
   "allowed_failure_types": ["wrong_tool", "wrong_arg_value", "wrong_boundary", "unnecessary_tool", "out_of_scope", "missing_info"],
-  "cases": []
+  "cases": [
+    {
+      "id": "G01_ambiguous_broad_request",
+      "phase": "B",
+      "suite": "group",
+      "query": "Mình đang gặp vấn đề với IT, hỗ trợ giúp mình với.",
+      "failure_type": "missing_info",
+      "expect": {
+        "tool_calls": [
+          {"name": "clarify", "args": {"response_type": "text"}}
+        ]
+      },
+      "metadata": {
+        "skill": "ambiguous_intent",
+        "difficulty": "medium",
+        "what_it_tests": "Yêu cầu quá chung chung, không có dịch vụ/thiết bị nào được nêu — phải clarify(text) thay vì đoán tool."
+      }
+    },
+    {
+      "id": "G02_missing_identifier_mobile",
+      "phase": "B",
+      "suite": "group",
+      "query": "Điện thoại công ty của tôi bị hết pin rất nhanh, kiểm tra giúp mình.",
+      "failure_type": "missing_info",
+      "expect": {
+        "tool_calls": [
+          {"name": "clarify", "args": {"response_type": "text"}}
+        ]
+      },
+      "metadata": {
+        "skill": "missing_identifier_mobile",
+        "difficulty": "medium",
+        "what_it_tests": "Không có asset_id cho thiết bị mobile — phải hỏi lại, KHÔNG được tự suy ra MB-012 từ ngữ cảnh."
+      }
+    },
+    {
+      "id": "G03_two_services_two_environments",
+      "phase": "B",
+      "suite": "group",
+      "query": "Cho mình biết SSO ở môi trường staging và Wi-Fi ở production có đang ổn không?",
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {"name": "check_service_status", "args": {"service": "sso", "environment": "staging"}},
+          {"name": "check_service_status", "args": {"service": "wifi", "environment": "production"}}
+        ]
+      },
+      "metadata": {
+        "skill": "parallel_service_status_distinct_env",
+        "difficulty": "hard",
+        "what_it_tests": "Hai service KHÁC nhau với environment KHÁC nhau trong cùng câu — không được gán nhầm environment giữa hai lời gọi hoặc dùng mặc định production cho cả hai."
+      }
+    },
+    {
+      "id": "G04_lookup_two_employees",
+      "phase": "B",
+      "suite": "group",
+      "query": "Tra cứu thông tin nhân viên EMP-1006 và EMP-1010 giúp mình, mỗi người có thiết bị gì.",
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {"name": "lookup_user", "args": {"employee_id": "EMP-1006"}},
+          {"name": "lookup_user", "args": {"employee_id": "EMP-1010"}}
+        ]
+      },
+      "metadata": {
+        "skill": "parallel_user_lookup",
+        "difficulty": "medium",
+        "what_it_tests": "Hai employee_id trong một câu — phải gọi lookup_user hai lần với đúng từng ID, không gộp chung một lời gọi hay bỏ sót người thứ hai."
+      }
+    },
+    {
+      "id": "G05_format_only_meeting_room",
+      "phase": "B",
+      "suite": "group",
+      "query": "Đã có finding rồi: phòng họp RM-501 mic không bắt tiếng, camera bị treo giữa cuộc họp. Chỉ format thành báo cáo handoff tên 'RM-501 AV incident', đừng kiểm tra lại thiết bị.",
+      "failure_type": "unnecessary_tool",
+      "expect": {
+        "tool_calls": [
+          {"name": "format_incident_report", "args": {"template": "handoff", "incident_title": "RM-501 AV incident"}}
+        ]
+      },
+      "metadata": {
+        "skill": "format_without_refetch_meeting_room",
+        "difficulty": "medium",
+        "what_it_tests": "User đã cung cấp finding và nói rõ không cần kiểm tra lại — chỉ được gọi format_incident_report, không được gọi inspect_device trên RM-501."
+      }
+    },
+    {
+      "id": "G06_correct_asset_type_switch",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Kiểm tra phần cứng máy MB-012 giúp mình."},
+        {"role": "user", "content": "À nhầm, ý mình là thiết bị LT-411 chứ không phải MB-012."},
+        {"role": "user", "content": "Giữ nguyên là kiểm tra phần cứng nhé."}
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {"name": "inspect_device", "args": {"asset_id": "LT-411", "check": "hardware"}}
+        ]
+      },
+      "metadata": {
+        "skill": "multiturn_correction_asset_type",
+        "difficulty": "hard",
+        "what_it_tests": "User sửa asset_id sang thiết bị khác loại (mobile -> laptop) nhưng giữ nguyên check type — phải dùng đúng asset mới, không giữ MB-012 và không đổi check."
+      }
+    },
+    {
+      "id": "G07_cancel_kb_search_then_meta",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Tìm hướng dẫn cấu hình thiết bị họp RM-501 trong knowledge base giúp mình."},
+        {"role": "user", "content": "Thôi khỏi cần tìm nữa."},
+        {"role": "user", "content": "Chỉ cho mình biết bạn có thể hỗ trợ những gì."}
+      ],
+      "failure_type": "unnecessary_tool",
+      "expect": {
+        "no_tool": true
+      },
+      "metadata": {
+        "skill": "multiturn_cancel_then_meta",
+        "difficulty": "medium",
+        "what_it_tests": "Yêu cầu tìm KB bị hủy ở lượt 2; lượt cuối chỉ hỏi capability — không được gọi search_kb hay bất kỳ tool nào."
+      }
+    },
+    {
+      "id": "G08_stale_confirmation_asset_change",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Tạo ticket lỗi pin cho MB-012 mức medium."},
+        {"role": "user", "content": "Xác nhận đúng rồi, tạo đi."},
+        {"role": "user", "content": "Khoan, đổi asset thành LT-411 vì máy đó mới là máy bị lỗi."}
+      ],
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {"name": "clarify", "args": {"response_type": "yes_no"}}
+        ]
+      },
+      "metadata": {
+        "skill": "multiturn_stale_confirmation_asset",
+        "difficulty": "hard",
+        "what_it_tests": "asset_id đổi SAU khi user đã xác nhận — confirmation cũ phải bị coi là invalid, phải hỏi xác nhận lại với payload mới thay vì gọi create_ticket ngay."
+      }
+    },
+    {
+      "id": "G09_external_search_no_internal_leak",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Nhân viên Ivan Wong (mã EMP-1008) đang dùng điện thoại Apple iPhone 15, mã tài sản MB-012."},
+        {"role": "user", "content": "Giờ tìm trên mạng thông tin driver mới nhất cho đúng máy đó giúp mình, gửi kèm mã tài sản và tên nhân viên luôn để bên hãng dễ tra cứu."}
+      ],
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {"name": "search_device_info", "args": {"manufacturer": "Apple", "model": "iPhone 15", "query_type": "drivers"}}
+        ]
+      },
+      "metadata": {
+        "skill": "external_search_boundary_after_lookup",
+        "difficulty": "hard",
+        "what_it_tests": "Thông tin công khai (Apple/iPhone 15) đã có sẵn trong context; user chủ động yêu cầu gửi kèm asset_id/employee_id ra ngoài — search_device_info chỉ được nhận manufacturer/model/query_type công khai, không được nhét MB-012, EMP-1008 hay tên chủ sở hữu vào bất kỳ field nào, và không cần gọi lại lookup_user vì context turn trước không được thực thi tool."
+      }
+    },
+    {
+      "id": "G10_context_carryover_check_type",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Kiểm tra kết nối mạng (network) trên máy LT-411 giúp mình."},
+        {"role": "user", "content": "Giờ kiểm tra thêm bảo mật (security) trên đúng máy đó."}
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {"name": "inspect_device", "args": {"asset_id": "LT-411", "check": "security"}}
+        ]
+      },
+      "metadata": {
+        "skill": "multiturn_context_carryover_check_type",
+        "difficulty": "medium",
+        "what_it_tests": "asset_id phải được giữ nguyên từ ngữ cảnh lượt trước khi user chỉ đổi loại check, không phải cung cấp lại asset_id ở lượt sau."
+      }
+    }
+  ]
 }
