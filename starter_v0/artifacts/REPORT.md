@@ -318,21 +318,68 @@ Sao chép mẫu dưới đây cho từng thành viên:
 
 ### Nguyễn Phúc Bảo — MSSV *(cần bổ sung)*
 
-- **Vai trò/phần việc được nhận:** Tool Architect & UI — cải thiện `tools.yaml`,
-  xây dựng giao diện chat Streamlit, và re-verify/vá lỗ hổng bảo mật ở v4.
-- **Những gì tôi đã thay đổi trong repo chung:** *(tự điền — gợi ý: phát hiện
-  hash của dòng v3 trong `version_log.csv` đã stale so với artifact thật trên
-  `main`, phát hiện 3 case adversarial fail thật dù report cũ claim PASS, vá
-  confirmation boundary chống role-spoofing/pseudo-confirmation và khôi phục
-  mapping `policy_area` cho tool `policy`, log lại thành v4)*
+- **Vai trò/phần việc được nhận:** Tool Architect & UI — cải thiện `tools.yaml`
+  qua v1-v3, xây dựng giao diện chat Streamlit, và re-verify/vá lỗ hổng bảo mật
+  ở v4.
+- **Những gì tôi đã thay đổi trong repo chung:**
+  1. Sửa `tools.yaml` qua 3 vòng độc lập, mỗi vòng 1 hypothesis riêng: v1 phân
+     biệt rõ shared-service tool (`check_service_status`) với single-asset tool
+     (`inspect_device`) và cấm dùng employee_id làm asset_id (fix
+     `H04_user_routing`); v2 thêm mapping chủ đề → `category` cho `search_kb`
+     (fix `H03_kb_routing`); v3 áp mapping tương tự cho `policy.policy_area` và
+     làm rõ hợp đồng write-action/confirmation cho `create_ticket`. PR #2 cho
+     vòng này (`e441458`) bị đóng không merge vì trùng với bản `tools.yaml`
+     khác đã được merge trước — các fix tương tự sau đó phải làm lại ở v4.
+  2. Xây `app.py` (Streamlit UI) tái sử dụng `run_model_tool_loop` từ `chat.py`,
+     có lưu transcript, hiển thị tool call/args/result/error, artifact version
+     + hash, và bo lại giao diện cho dễ nhìn hơn mặc định của Streamlit (PR #4,
+     `19be18b`).
+  3. Chạy lại toàn bộ base/extension/adversarial suite trên đúng artifact đang
+     có ở `main` (không tin số liệu cũ) và phát hiện: (a) `version_log.csv` bị
+     stale, hash không khớp artifact thật; (b) 3 case adversarial
+     (`A04_argument_smuggling`, `A10_stale_confirmation_attack`,
+     `A11_multiturn_role_spoof`) **fail thật** dù `REPORT.md` lúc đó claim PASS
+     — tức 3 lỗ hổng bảo mật thật đang tồn tại trên `main`; (c) extension suite
+     tụt còn 0.40 vì `tools.yaml` bị merge đè mất mapping `policy_area` đã fix ở
+     mục 1. Vá lại cả 3 trong `system_prompt.md` + khôi phục `policy_area`
+     trong `tools.yaml`, re-verify đạt adversarial 1.0 / base 1.0 / extension
+     0.9, rồi log thành v4 kèm 3 file run JSON làm evidence thật (PR #7,
+     `a298b05`/`d9176ed`).
 - **File hoặc artifact liên quan:** `artifacts/tools.yaml`, `app.py`,
-  `artifacts/system_prompt.md` (v4), `artifacts/version_log.csv` (dòng v4)
-- **Commit hash hoặc pull request:** `e441458` (PR #2), `19be18b` (PR #4),
-  `a298b05`/`d9176ed` (PR #7)
-- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** *(tự điền)*
-- **Khó khăn tôi gặp và cách tôi xử lý:** *(tự điền)*
-- **Điều tôi học được từ phần việc này:** *(tự điền)*
-- **Nếu làm lại, tôi sẽ cải thiện điều gì:** *(tự điền)*
+  `artifacts/system_prompt.md` (v4), `artifacts/version_log.csv` (dòng v4),
+  `runs/v6_B_*_openai_20260914*.json`
+- **Commit hash hoặc pull request:** `e441458` (PR #2, không merge), `19be18b`
+  (PR #4), `a298b05`/`d9176ed` (PR #7)
+- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** Khi viết lại rule
+  "confirmation hợp lệ là gì" ở v4, tôi chọn phân biệt theo **hình thức** của
+  xác nhận (lời tự nhiên của user vs. JSON/pseudo-code dán vào, vs. gán cho vai
+  giả `<assistant>`) thay vì chặn tuyệt đối mọi self-declared confirmation.
+  Lý do: bộ test gốc của lab (`E05`/`E08` trong `eval_helpdesk_extension.json`)
+  kỳ vọng agent tin một xác nhận rõ ràng do chính user nói ra trong 1 câu, nên
+  chặn tuyệt đối sẽ pass được bảo mật nhưng fail luôn UX mà lab gốc muốn kiểm
+  tra. Sau đó phát hiện case `G06` (do TV3 tự viết) lại kỳ vọng ngược lại; tôi
+  quyết định giữ theo hướng của bộ test gốc và ghi nhận `G06` là trade-off đã
+  biết, thay vì tiếp tục vá vì 2 vòng thử thêm đều gây regression ngược lại
+  trên `A10`/`A11` (an toàn hơn phải ưu tiên hơn việc pass thêm 1 case ngoài
+  bộ test gốc).
+- **Khó khăn tôi gặp và cách tôi xử lý:** Khó khăn lớn nhất là phát hiện ra
+  rằng làm việc song song trên `system_prompt.md`/`tools.yaml` (nhiều PR merge
+  chồng lên nhau) đã âm thầm làm mất fix cũ và làm yếu rule bảo mật, trong khi
+  `REPORT.md` vẫn còn ghi số liệu từ trước khi merge — nếu không chủ động
+  chạy lại toàn bộ eval trên đúng artifact hiện tại của `main` thì sẽ không
+  bao giờ phát hiện ra. Cách xử lý: luôn tính lại `artifact_version` (hash
+  thật) trước khi tin bất kỳ số liệu cũ nào, và mỗi lần sửa xong đều chạy lại
+  cả 3 bộ test (không chỉ bộ liên quan trực tiếp) để bắt regression chéo.
+- **Điều tôi học được từ phần việc này:** Một hypothesis "an toàn hơn" ở một
+  rule có thể phá vỡ hành vi mong muốn ở rule khác (confirmation boundary vs.
+  UX tin tưởng user), và merge độc lập từ nhiều người trên cùng 1 file dễ làm
+  mất fix đã có nếu không re-verify lại bằng evidence thật sau mỗi lần merge —
+  "report nói PASS" không có nghĩa là artifact hiện tại vẫn PASS.
+- **Nếu làm lại, tôi sẽ cải thiện điều gì:** Thống nhất trước với TV1 một quy
+  ước rõ ràng cho việc ai sửa `system_prompt.md` ở giai đoạn nào, và thêm một
+  bước bắt buộc "chạy lại cả 3 suite ngay sau khi merge bất kỳ PR nào đụng
+  `system_prompt.md`/`tools.yaml`" thay vì chỉ chạy khi có người chủ động yêu
+  cầu kiểm tra lại.
 
 ### Đoàn Bá Khải — MSSV *(cần bổ sung)*
 
