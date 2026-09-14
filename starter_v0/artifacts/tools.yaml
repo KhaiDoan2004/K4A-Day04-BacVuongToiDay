@@ -104,3 +104,40 @@ tools:
         asset_id: {type: string, default: "", description: "Mã tài sản nếu có"}
         confirmed: {type: boolean, default: false, description: "Phải là boolean true từ explicit user confirmation. KHÔNG tự set true."}
       required: [summary]
+
+  # ---------------- Team bonus tools ----------------
+  - name: diagnose_network
+    description: "Kiểm tra chẩn đoán mạng, độ trễ ping, mất gói, DNS và gateway của các văn phòng chi nhánh (office_hanoi, office_hcm, office_danang) hoặc gateway nội bộ (gateway_vpn, dns_primary, server_sso)."
+    parameters:
+      type: object
+      properties:
+        target: {type: string, enum: [office_hanoi, office_hcm, office_danang, gateway_vpn, dns_primary, server_sso], description: "Điểm kết nối hoặc chi nhánh cần kiểm tra"}
+        check_type: {type: string, enum: [all, ping, packet_loss, dns, gateway], default: "all", description: "Kiểu kiểm tra chẩn đoán"}
+      required: [target]
+
+  - name: check_software_catalog
+    description: "Tra cứu danh mục phần mềm doanh nghiệp để kiểm tra trạng thái phê duyệt (approved, requires_approval, prohibited), phiên bản chuẩn, loại giấy phép và hướng dẫn cài đặt."
+    parameters:
+      type: object
+      properties:
+        software_name: {type: string, default: "", description: "Tên phần mềm cần tra cứu, ví dụ Slack, Docker Desktop, Wireshark, BitTorrent"}
+        category: {type: string, enum: [all, communication, developer_tools, security, utilities, prohibited], default: "all", description: "Nhóm phần mềm"}
+      required: [software_name]
+
+  - name: inspect_meeting_room
+    description: "Tra cứu danh mục thiết bị trình chiếu, micro, camera họp trực tuyến và trạng thái kỹ thuật của phòng họp theo mã phòng (MR-101, MR-102, MR-201, MR-301, MR-401) hoặc tên phòng."
+    parameters:
+      type: object
+      properties:
+        room_id: {type: string, description: "Mã phòng họp ví dụ MR-101 hoặc tên phòng"}
+        aspect: {type: string, enum: [all, equipment, av_status, network, issues], default: "all", description: "Khía cạnh cần kiểm tra"}
+      required: [room_id]
+
+  - name: lookup_ticket_status
+    description: "Tra cứu tiến độ và trạng thái xử lý của ticket hỗ trợ kỹ thuật theo mã ticket (LAB-XXXXXXXX hoặc INC-XXXX). Trả về người tiếp nhận, mức độ ưu tiên và ghi chú xử lý."
+    parameters:
+      type: object
+      properties:
+        ticket_id: {type: string, description: "Mã ticket cần tra cứu (ví dụ LAB-1A2B3C4D hoặc INC-1042)"}
+      required: [ticket_id]
+
