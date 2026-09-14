@@ -14,3 +14,11 @@ Tra cứu danh mục thiết bị, hệ thống nghe nhìn (AV), màn hình trì
 Hỗ trợ các mã phòng họp như MR-101, MR-102, MR-201, MR-301, MR-401 hoặc tìm theo tên phòng.
 Các khía cạnh kiểm tra hỗ trợ: all, equipment, av_status, network, issues.
 Không lưu trữ hoặc tiết lộ nội dung cuộc họp nội bộ hay hình ảnh camera.
+
+## Smoke test
+
+```powershell
+python -c "from tools import TOOL_FUNCTIONS as T; print(T['inspect_meeting_room']('MR-101','all'))"
+```
+
+PASS khi trả đúng `room_id`, `equipment`, `av_status`, không có `error`.
