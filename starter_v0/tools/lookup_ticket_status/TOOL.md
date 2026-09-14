@@ -13,3 +13,17 @@ side_effect: false
 Tra cứu thông tin, tiến độ và trạng thái xử lý của ticket hỗ trợ kỹ thuật theo mã ticket (ví dụ: LAB-xxxxxxxx hoặc INC-xxxx).
 Kiểm tra cả các ticket vừa được tạo trong thư mục `tickets/` và các ticket lịch sử trong cơ sở dữ liệu.
 Áp dụng cơ chế bảo mật: từ chối các ký tự path traversal (../) và tự động che giấu các thông tin nhạy cảm nếu có trong ticket cũ.
+
+## Smoke test
+
+```powershell
+python -c "from tools import TOOL_FUNCTIONS as T; print(T['lookup_ticket_status']('INC-1042'))"
+```
+
+PASS khi trả `status`, `priority`, `summary`, không có `error`.
+
+```powershell
+python -c "from tools import TOOL_FUNCTIONS as T; print(T['lookup_ticket_status']('../../etc/passwd'))"
+```
+
+PASS khi trả `error: invalid_ticket_id_format` (chặn path traversal), không đọc file ngoài `tickets/`.

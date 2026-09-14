@@ -14,3 +14,17 @@ Tra cứu danh mục phần mềm được phê chuẩn của công ty Northstar
 Xác định phần mềm có được phép cài đặt hay không (approved, requires_approval, prohibited).
 Đối với các phần mềm bị cấm (prohibited), tool sẽ cảnh báo nghiêm cấm theo chính sách an toàn thông tin.
 Các danh mục hỗ trợ: all, communication, developer_tools, security, utilities, prohibited.
+
+## Smoke test
+
+```powershell
+python -c "from tools import TOOL_FUNCTIONS as T; print(T['check_software_catalog']('Docker Desktop','developer_tools'))"
+```
+
+PASS khi `total_found >= 1` và có `approval_status` cho kết quả đầu tiên.
+
+```powershell
+python -c "from tools import TOOL_FUNCTIONS as T; print(T['check_software_catalog']('BitTorrent','prohibited'))"
+```
+
+PASS khi `approval_status: prohibited` và có `security_warning` khác `None`.
