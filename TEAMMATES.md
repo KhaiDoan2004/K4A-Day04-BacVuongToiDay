@@ -7,5 +7,5 @@ Repository nộp bài: https://github.com/KhaiDoan2004/K4A-Day04-BacVuongToiDay
 | Nguyễn Văn An | 2A202602782 | [AnNguyen05092004](https://github.com/AnNguyen05092004) | QA & Metrics — viết `eval_group.json` (10 case), `version_log.csv`, chạy eval các phiên bản |
 | Nguyễn Văn Biển | 2A202602416 | [nguyenbien8](https://github.com/nguyenbien8) | Prompt Engineer — cải thiện `system_prompt.md` (v1) |
 | Nguyễn Phúc Bảo | 2A202602925 | [PhucBao1](https://github.com/PhucBao1) | Tool Architect & UI — cải thiện `tools.yaml` (routing/argument convention), xây dựng giao diện chat Streamlit (`app.py`), vá lỗ hổng bảo mật v4 |
-| Đoàn Bá Khải | 2A202602 | [KhaiDoan2004](https://github.com/KhaiDoan2004) | Team Lead — tạo fork, review/merge pull request, hoàn thiện `system_prompt.md` (v2→v3, đạt 100% base accuracy) |
+| Đoàn Bá Khải | 2A202602728 | [KhaiDoan2004](https://github.com/KhaiDoan2004) | Team Lead — tạo fork, review/merge pull request, hoàn thiện `system_prompt.md` (v2→v3, đạt 100% base accuracy) |
 | Trần Ngọc Khuyến | 2A202602682 | [TrKhuyn](https://github.com/TrKhuyn) | Security Analyst — xây 4 bonus tool (`diagnose_network`, `check_software_catalog`, `inspect_meeting_room`, `lookup_ticket_status`), phân tích adversarial evidence (B4a) và safety review (B6) |

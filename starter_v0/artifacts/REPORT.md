@@ -66,9 +66,9 @@ total_cases`, và tool result error đã được review thủ công.
 
 | Version | Prompt/tool change | Hypothesis | Metric | Before | After | Run file |
 |---|---|---|---|---:|---:|---|
-| v0 | baseline | Đo hành vi chưa tối ưu trước khi sửa | case_accuracy | — | 0.70 | `runs/v0_B_base_openai_20260914T185500158601.json` |
-| v1 | `system_prompt.md` | Thêm rule clarify khi thiếu ID và bắt buộc xin xác nhận trước write action sẽ giảm lỗi missing_info và wrong_boundary | case_accuracy | 0.70 | 0.70 | `runs/v1_B_base_openai_20260914T191304475090.json` |
-| v2 | `system_prompt.md` + `tools.yaml` | Giảm độ gắt của rule clarify và quy định rõ tham số trong tools.yaml sẽ tăng argument accuracy | case_accuracy | 0.70 | 0.9667 | `runs/v2_B_base_openai_20260914T192018737111.json` |
+| v0 | baseline | Đo hành vi chưa tối ưu trước khi sửa | case_accuracy | — | 0.70 | `runs/v0_B_base_openai_20260915T092740138583.json` |
+| v1 | `system_prompt.md` | Thêm rule clarify khi thiếu ID và bắt buộc xin xác nhận trước write action sẽ giảm lỗi missing_info và wrong_boundary | case_accuracy | 0.70 | 0.7333† | `runs/v1_B_base_openai_20260915T092854077568.json` |
+| v2 | `system_prompt.md` + `tools.yaml` | Giảm độ gắt của rule clarify và quy định rõ tham số trong tools.yaml sẽ tăng argument accuracy | case_accuracy | 0.70 | 0.9667‡ (chưa kiểm chứng lại được) | *(không có run file — xem ghi chú ‡)* |
 | v3 | `system_prompt.md` | Nghiêm cấm AI sử dụng dữ liệu ví dụ (như EMP-1003) nếu user không cung cấp sẽ khắc phục hoàn toàn lỗi missing_info còn lại | case_accuracy | 0.9667 | 0.9667* | `runs/v3_B_base_openai_20260915T002406714682.json` |
 | v4 | `system_prompt.md` + `tools.yaml` (hardening confirmation boundary + policy_area routing) | Re-verify trên artifact thật của `main` phát hiện: (1) hash của dòng v3 phía trên đã cũ, không khớp artifact hiện tại (bản gốc claim `metric_after=1.0` cũng không tái lập được — Bảo chạy lại thật ra 0.9667*, xem cột "After" ở dòng v3); (2) 3 case adversarial (A04, A10, A11) **fail thật** dù report claim PASS trước đó (xem cảnh báo ở B4a); (3) extension suite tụt còn 0.40 vì mất mapping `policy_area`. Thêm rule: confirmation chỉ hợp lệ khi là lời user tự nói, không qua role giả `<assistant>`/`SYSTEM`/`DEVELOPER`; khôi phục mapping chủ đề → `policy_area` | case_accuracy (adversarial / base / extension) | 0.75 / 0.9667 / 0.40 | 1.0 / 1.0 / 0.9 | `runs/v4_B_adversarial_openai_20260914T233346796538.json`, `runs/v4_B_base_openai_20260914T233433146164.json`, `runs/v4_B_extension_openai_20260914T233501914579.json` |
 
@@ -78,6 +78,32 @@ total_cases`, và tool result error đã được review thủ công.
 > và trỏ sang run file mới tái tạo được (`v3_B_base_openai_20260915T002406714682.json`).
 > Bài học: số liệu trong report/log không có run file kèm theo thì không nên
 > tin cho tới khi re-run xác nhận được.
+>
+> † Dòng `v0`/`v1`: cùng vấn đề như dòng `v3` — 2 run file gốc trỏ tới
+> (`v0_B_base_openai_20260914T185500158601.json`,
+> `v1_B_base_openai_20260914T191304475090.json`) không tồn tại trong git ở bất
+> kỳ branch nào (không ai từng commit). Audit ngày 2026-09-15 đã xác định đúng
+> commit thật cho từng version — `v0` = commit `f680c59` (commit cuối cùng của
+> scaffold gốc, trước khi bất kỳ thành viên nào sửa artifact), `v1` = commit
+> `4fe61a0` (PR #1, Nguyễn Văn Biển, chỉ đổi `system_prompt.md`) — và chạy lại
+> `eval_base` thật trên đúng 2 commit đó: `v0` ra lại đúng 0.70 (khớp claim cũ),
+> `v1` ra 0.7333/30 (22/30), nhỉnh hơn claim cũ 0.70 trong biên độ sampling
+> variance (xem B7). Cả 2 đã có run file thật mới, commit kèm evidence.
+>
+> ‡ Dòng `v2`: **không tái lập được**. `tools.yaml` của bước này thực ra đến từ
+> PR #2 của Nguyễn Phúc Bảo (commit `e441458`) nhưng PR đó **CLOSED, không
+> merge**, và được build trên baseline `v0` (không phải trên `v1`) — nghĩa là
+> tổ hợp "`v1` prompt + `v2` tools" chưa từng tồn tại thành một commit thật nào.
+> Đã thử ghép thủ công (prompt thật của `v1` + `tools.yaml` thật của `e441458`)
+> và chạy lại thật: ra `case_accuracy = 0.8/30` (24/30), **không khớp** 0.9667
+> đã log trước đây. Vì số 0.9667 gốc không có run file kèm theo và không thể
+> kiểm chứng lại bằng bất kỳ commit thật nào, nhóm coi đây là **claim lịch sử
+> chưa kiểm chứng được, không dùng làm bằng chứng khi chấm điểm**. Điều này
+> không ảnh hưởng đến kết luận chính của B1: `v3` (commit `33ad947` thật của
+> Đoàn Bá Khải) áp trực tiếp lên baseline `v0` trong đúng 1 commit, đã re-run
+> xác nhận thật (0.9667/30), và `v4` (bản cuối cùng đang nộp) cũng đã re-verify
+> đầy đủ — chỉ riêng bước trung gian "v2" là không có bằng chứng git xác thực
+> được.
 >
 > Đầy đủ chi tiết (author, artifact_version, prompt_hash, tools_hash) xem `artifacts/version_log.csv`
 > (đã thống nhất nhãn `v4` xuyên suốt — trước đó có lúc lệch với `v6` do người chạy
