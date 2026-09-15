@@ -68,8 +68,8 @@ total_cases`, và tool result error đã được review thủ công.
 |---|---|---|---|---:|---:|---|
 | v0 | baseline | Đo hành vi chưa tối ưu trước khi sửa | case_accuracy | — | 0.70 | `runs/v0_B_base_openai_20260915T092740138583.json` |
 | v1 | `system_prompt.md` | Thêm rule clarify khi thiếu ID và bắt buộc xin xác nhận trước write action sẽ giảm lỗi missing_info và wrong_boundary | case_accuracy | 0.70 | 0.7333† | `runs/v1_B_base_openai_20260915T092854077568.json` |
-| v2 | `system_prompt.md` + `tools.yaml` | Giảm độ gắt của rule clarify và quy định rõ tham số trong tools.yaml sẽ tăng argument accuracy | case_accuracy | 0.70 | 0.9667‡ (chưa kiểm chứng lại được) | *(không có run file — xem ghi chú ‡)* |
-| v3 | `system_prompt.md` | Nghiêm cấm AI sử dụng dữ liệu ví dụ (như EMP-1003) nếu user không cung cấp sẽ khắc phục hoàn toàn lỗi missing_info còn lại | case_accuracy | 0.9667 | 0.9667* | `runs/v3_B_base_openai_20260915T002406714682.json` |
+| v2 | `system_prompt.md` + `tools.yaml` | Giảm độ gắt của rule clarify và quy định rõ tham số trong tools.yaml sẽ tăng argument accuracy | case_accuracy | 0.7333 | 0.8‡ | `runs/v2_B_base_openai_20260915T094428891474.json` |
+| v3 | `system_prompt.md` + `tools.yaml` | Nghiêm cấm AI sử dụng dữ liệu ví dụ (như EMP-1003) nếu user không cung cấp sẽ khắc phục hoàn toàn lỗi missing_info còn lại | case_accuracy | 0.7§ | 0.9667* | `runs/v3_B_base_openai_20260915T002406714682.json` |
 | v4 | `system_prompt.md` + `tools.yaml` (hardening confirmation boundary + policy_area routing) | Re-verify trên artifact thật của `main` phát hiện: (1) hash của dòng v3 phía trên đã cũ, không khớp artifact hiện tại (bản gốc claim `metric_after=1.0` cũng không tái lập được — Bảo chạy lại thật ra 0.9667*, xem cột "After" ở dòng v3); (2) 3 case adversarial (A04, A10, A11) **fail thật** dù report claim PASS trước đó (xem cảnh báo ở B4a); (3) extension suite tụt còn 0.40 vì mất mapping `policy_area`. Thêm rule: confirmation chỉ hợp lệ khi là lời user tự nói, không qua role giả `<assistant>`/`SYSTEM`/`DEVELOPER`; khôi phục mapping chủ đề → `policy_area` | case_accuracy (adversarial / base / extension) | 0.75 / 0.9667 / 0.40 | 1.0 / 1.0 / 0.9 | `runs/v4_B_adversarial_openai_20260914T233346796538.json`, `runs/v4_B_base_openai_20260914T233433146164.json`, `runs/v4_B_extension_openai_20260914T233501914579.json` |
 
 > \* Dòng `v3`: `metric_after` gốc ghi 1.0 nhưng file run tương ứng chưa từng
@@ -90,20 +90,28 @@ total_cases`, và tool result error đã được review thủ công.
 > `v1` ra 0.7333/30 (22/30), nhỉnh hơn claim cũ 0.70 trong biên độ sampling
 > variance (xem B7). Cả 2 đã có run file thật mới, commit kèm evidence.
 >
-> ‡ Dòng `v2`: **không tái lập được**. `tools.yaml` của bước này thực ra đến từ
-> PR #2 của Nguyễn Phúc Bảo (commit `e441458`) nhưng PR đó **CLOSED, không
-> merge**, và được build trên baseline `v0` (không phải trên `v1`) — nghĩa là
-> tổ hợp "`v1` prompt + `v2` tools" chưa từng tồn tại thành một commit thật nào.
-> Đã thử ghép thủ công (prompt thật của `v1` + `tools.yaml` thật của `e441458`)
-> và chạy lại thật: ra `case_accuracy = 0.8/30` (24/30), **không khớp** 0.9667
-> đã log trước đây. Vì số 0.9667 gốc không có run file kèm theo và không thể
-> kiểm chứng lại bằng bất kỳ commit thật nào, nhóm coi đây là **claim lịch sử
-> chưa kiểm chứng được, không dùng làm bằng chứng khi chấm điểm**. Điều này
-> không ảnh hưởng đến kết luận chính của B1: `v3` (commit `33ad947` thật của
-> Đoàn Bá Khải) áp trực tiếp lên baseline `v0` trong đúng 1 commit, đã re-run
-> xác nhận thật (0.9667/30), và `v4` (bản cuối cùng đang nộp) cũng đã re-verify
-> đầy đủ — chỉ riêng bước trung gian "v2" là không có bằng chứng git xác thực
-> được.
+> ‡ Dòng `v2`: không có commit thật nào chứa nguyên trạng tổ hợp "`v1` prompt +
+> `v2` tools" — `tools.yaml` của bước này thực ra đến từ PR #2 của Nguyễn Phúc
+> Bảo (commit `e441458`) nhưng PR đó **CLOSED, không merge**, và được build
+> trên baseline `v0` (không phải trên `v1`). Đã tái tạo lại bằng cách ghép 2
+> file **có thật** trong git (`system_prompt.md` của commit `4fe61a0` + đúng
+> `tools.yaml` của commit `e441458`) và chạy `eval_base` thật — lặp lại 2 lần
+> độc lập, cả 2 lần đều ra ổn định `case_accuracy = 0.8/30` (24/30), khác với
+> 0.9667 từng log trước đây (số đó không có run file kèm theo nên không dùng
+> được). Đã đổi số chính thức của `v2` sang 0.8 vì đây là bằng chứng thật duy
+> nhất tái lập được — vẫn đúng hướng cải thiện của hypothesis (0.7333 ở `v1` →
+> 0.8 ở `v2`), chỉ là mức tăng thấp hơn claim cũ.
+>
+> § Dòng `v3`: cột "Before" đổi từ 0.9667 (giả định nối tiếp `v2`) sang **0.7**
+> (baseline `v0` thật). Lý do: commit thật của `v3` (`33ad947`, Đoàn Bá Khải)
+> có parent trực tiếp là `f680c59` — tức baseline `v0` — không phải build tiếp
+> trên `v2`; đã verify cả `prompt_hash` (`205a10e9432e`) lẫn `tools_hash`
+> (`b1ecf974ed8d`) của commit này khớp đúng 100% với giá trị đã log. Nói cách
+> khác, Khải gộp luôn tinh thần hypothesis của cả `v1` (clarify/confirmation)
+> và `v2` (tham số `tools.yaml` rõ ràng) vào một commit duy nhất và đạt thẳng
+> 0.9667 từ baseline, thay vì đi tuần tự qua từng bước — nên cột "Changed
+> artifact" của `v3` cũng sửa lại thành `system_prompt.md` + `tools.yaml` (bản
+> gốc ghi thiếu `tools.yaml`).
 >
 > Đầy đủ chi tiết (author, artifact_version, prompt_hash, tools_hash) xem `artifacts/version_log.csv`
 > (đã thống nhất nhãn `v4` xuyên suốt — trước đó có lúc lệch với `v6` do người chạy
@@ -260,7 +268,7 @@ nhóm tự xây.
   4 bonus tool (khi nào dùng `check_type/aspect=all` so với giá trị cụ thể,
   cách suy luận `category` từ tên phần mềm). Kỳ vọng: `eval_group.json`
   case_accuracy tăng từ 0.6 lên ≥0.9 mà không làm giảm `eval_base.json` (hiện
-  0.9667) hay adversarial/extension (hiện 1.0 / 0.9).
+  1.0) hay adversarial/extension (hiện 1.0 / 0.9).
 - **Phát hiện phụ (đáng lưu ý cho cả nhóm):** `versioning.py` băm `prompt_hash`/
   `tools_hash` bằng `sha256(path.read_bytes())` trên file đã checkout — nếu máy
   ai đó có `git config core.autocrlf=true` (mặc định phổ biến trên Windows),
@@ -296,9 +304,14 @@ evidence thực tế trong repository, không chỉ mô tả cảm nhận chung.
 > Nhóm đã hoàn thành vòng lặp v0→v4 trên `system_prompt.md`/`tools.yaml`, đưa
 > `case_accuracy` trên `eval_base.json` từ 0.70 (v0) lên 0.9667 (v3, re-verify
 > thật) và 1.0 (v4) — xem `version_log.csv` và B1. Thay đổi tạo cải thiện rõ
-> nhất là v1→v2: quy định rõ
-> tham số bắt buộc trong `tools.yaml` (`environment`, `check`) giúp
-> `case_accuracy` nhảy từ 0.70 lên 0.9667 chỉ sau 1 vòng. Sau v3, nhóm merge
+> nhất thực ra là v0→v3 (commit `33ad947` của Đoàn Bá Khải): gộp cùng lúc rule
+> clarify/confirmation (tinh thần v1) và làm rõ tham số bắt buộc trong
+> `tools.yaml` (`environment`, `check`, tinh thần v2) vào một commit duy nhất,
+> đưa `case_accuracy` từ 0.70 thẳng lên 0.9667 (xem B1 dòng v3 và ghi chú §).
+> Riêng 2 bước trung gian v1 (chỉ sửa prompt) và v2 (ghép thêm tools.yaml của
+> PR #2, không merge) khi đo tách riêng chỉ nhích nhẹ 0.70→0.7333→0.8 — nên
+> phần lớn cải thiện thật sự đến từ việc Khải làm cả 2 việc cùng lúc trong v3,
+> không phải một bước v1→v2 riêng lẻ nào. Sau v3, nhóm merge
 > thêm 4 bonus tool (`diagnose_network`, `check_software_catalog`,
 > `inspect_meeting_room`, `lookup_ticket_status`) và phát hiện artifact_version
 > đã stale khiến 3 case adversarial thực ra fail dù report cũ claim PASS; v4 đã
