@@ -268,8 +268,9 @@ evidence thực tế trong repository, không chỉ mô tả cảm nhận chung.
 > cho khớp với trải nghiệm thật trước khi nộp.)*
 >
 > Nhóm đã hoàn thành vòng lặp v0→v4 trên `system_prompt.md`/`tools.yaml`, đưa
-> `case_accuracy` trên `eval_base.json` từ 0.70 (v0) lên 1.0 (v3, v4) — xem
-> `version_log.csv` và B1. Thay đổi tạo cải thiện rõ nhất là v1→v2: quy định rõ
+> `case_accuracy` trên `eval_base.json` từ 0.70 (v0) lên 0.9667 (v3, re-verify
+> thật) và 1.0 (v4) — xem `version_log.csv` và B1. Thay đổi tạo cải thiện rõ
+> nhất là v1→v2: quy định rõ
 > tham số bắt buộc trong `tools.yaml` (`environment`, `check`) giúp
 > `case_accuracy` nhảy từ 0.70 lên 0.9667 chỉ sau 1 vòng. Sau v3, nhóm merge
 > thêm 4 bonus tool (`diagnose_network`, `check_software_catalog`,
